@@ -86,10 +86,6 @@ flutter test test/pages/home_page_test.dart
 - Pull request: Fork → Tạo branch → Sửa → Tạo pull request.
 - Trước khi PR, chạy `flutter test` và `flutter analyze`.
 
-## Liên hệ / Hỗ trợ
-- Nếu gặp lỗi hoặc muốn góp ý, mở issue hoặc liên hệ trực tiếp với tác giả (nếu có thông tin) hoặc gửi PR.
-
 ---
-Mục nào dùng chữ tiếng Anh vì khó dịch rõ ràng: `sqflite`, `sqflite_common_ffi`, `flutter analyze`, `flutter test`, `flutter run`.
 
 Tài liệu tham khảo: https://docs.flutter.dev/ (Flutter official docs). 
