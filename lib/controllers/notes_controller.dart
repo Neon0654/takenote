@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/database/notes_database.dart';
 import '../data/models/note.dart';
+import '../data/models/tag.dart';
 import '../presentation/pages/home_page.dart';
 import '../presentation/pages/edit_note_page.dart';
 
@@ -14,6 +15,7 @@ class NotesController extends StatefulWidget {
 
 class _NotesControllerState extends State<NotesController> {
   List<Note> notes = [];
+  Map<int, List<Tag>> noteTags = {}; // ✅ CACHE TAG
 
   @override
   void initState() {
@@ -21,35 +23,75 @@ class _NotesControllerState extends State<NotesController> {
     loadNotes();
   }
 
-  /// Load tất cả ghi chú
+  /// LOAD NOTES + TAG (1 lần)
   Future<void> loadNotes() async {
     notes = await NotesDatabase.instance.fetchNotes();
+    await loadTagsForNotes();
     setState(() {});
   }
 
-  /// Thêm ghi chú
+  /// LOAD TAG CHO TẤT CẢ NOTE
+  Future<void> loadTagsForNotes() async {
+    noteTags.clear();
+
+    for (final note in notes) {
+      if (note.id == null) continue;
+      final tags =
+          await NotesDatabase.instance.getTagsOfNote(note.id!);
+      noteTags[note.id!] = tags;
+    }
+  }
+
+  /// ADD NOTE
   Future<void> addNote(String title, String content) async {
     await NotesDatabase.instance.createNote(
-      Note(title: title, content: content, createdAt: DateTime.now()),
+      Note(
+        title: title,
+        content: content,
+        createdAt: DateTime.now(),
+      ),
     );
     loadNotes();
   }
 
-  /// Cập nhật ghi chú
+  /// UPDATE NOTE
   Future<void> updateNote(int id, String title, String content) async {
+    final old = await NotesDatabase.instance.getNoteById(id);
+    if (old == null) return;
+
     await NotesDatabase.instance.updateNote(
-      Note(id: id, title: title, content: content, createdAt: DateTime.now()),
+      Note(
+        id: id,
+        title: title,
+        content: content,
+        createdAt: old.createdAt,
+        isPinned: old.isPinned,
+      ),
     );
     loadNotes();
   }
 
-  /// Xóa ghi chú
+  /// DELETE NOTE
   Future<void> deleteNote(int id) async {
     await NotesDatabase.instance.deleteNote(id);
     loadNotes();
   }
 
-  /// ➕ Mở trang THÊM ghi chú
+  /// TOGGLE PIN
+  Future<void> togglePin(Note note) async {
+    await NotesDatabase.instance.updateNote(
+      Note(
+        id: note.id,
+        title: note.title,
+        content: note.content,
+        createdAt: note.createdAt,
+        isPinned: !note.isPinned,
+      ),
+    );
+    loadNotes();
+  }
+
+  /// ADD PAGE
   void openAddNotePage() {
     Navigator.push(
       context,
@@ -63,7 +105,7 @@ class _NotesControllerState extends State<NotesController> {
     );
   }
 
-  /// ✏️ Mở trang SỬA ghi chú
+  /// EDIT PAGE
   void openEditNotePage(int id) async {
     final note = await NotesDatabase.instance.getNoteById(id);
     if (note == null) return;
@@ -85,9 +127,11 @@ class _NotesControllerState extends State<NotesController> {
   Widget build(BuildContext context) {
     return HomePage(
       notes: notes,
+      noteTags: noteTags, // ✅ TRUYỀN CACHE
+      onAddNote: openAddNotePage,
       onDeleteNote: deleteNote,
-      onAddNote: openAddNotePage,   // ✅ mở trang add
-      onTapNote: openEditNotePage,  // ✅ mở đúng note
+      onTapNote: openEditNotePage,
+      onTogglePin: togglePin,
     );
   }
 }
