@@ -15,7 +15,10 @@ class NotesController extends StatefulWidget {
 
 class _NotesControllerState extends State<NotesController> {
   List<Note> notes = [];
-  Map<int, List<Tag>> noteTags = {}; // ✅ CACHE TAG
+  Map<int, List<Tag>> noteTags = {}; // cache tag cho từng note
+
+  List<Tag> allTags = [];
+  Tag? selectedTag;
 
   @override
   void initState() {
@@ -23,14 +26,21 @@ class _NotesControllerState extends State<NotesController> {
     loadNotes();
   }
 
-  /// LOAD NOTES + TAG (1 lần)
+  /// LOAD NOTES + TAG
   Future<void> loadNotes() async {
-    notes = await NotesDatabase.instance.fetchNotes();
+    if (selectedTag == null) {
+      notes = await NotesDatabase.instance.fetchNotes();
+    } else {
+      notes = await NotesDatabase.instance
+          .getNotesByTag(selectedTag!.id!);
+    }
+
+    allTags = await NotesDatabase.instance.fetchTags();
     await loadTagsForNotes();
     setState(() {});
   }
 
-  /// LOAD TAG CHO TẤT CẢ NOTE
+  /// LOAD TAG CHO TẤT CẢ NOTE (PHỤC VỤ HIỂN THỊ)
   Future<void> loadTagsForNotes() async {
     noteTags.clear();
 
@@ -40,6 +50,12 @@ class _NotesControllerState extends State<NotesController> {
           await NotesDatabase.instance.getTagsOfNote(note.id!);
       noteTags[note.id!] = tags;
     }
+  }
+
+  /// CHỌN TAG
+  void onSelectTag(Tag? tag) {
+    selectedTag = tag;
+    loadNotes();
   }
 
   /// ADD NOTE
@@ -127,7 +143,10 @@ class _NotesControllerState extends State<NotesController> {
   Widget build(BuildContext context) {
     return HomePage(
       notes: notes,
-      noteTags: noteTags, // ✅ TRUYỀN CACHE
+      noteTags: noteTags,
+      tags: allTags,
+      selectedTag: selectedTag,
+      onSelectTag: onSelectTag,
       onAddNote: openAddNotePage,
       onDeleteNote: deleteNote,
       onTapNote: openEditNotePage,

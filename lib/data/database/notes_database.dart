@@ -172,58 +172,72 @@ class NotesDatabase {
 
   // ================= TAG =================
 
-  /// Tạo tag mới (không trùng tên)
-  Future<int> createTag(String name) async {
-    final db = await database;
-    return await db.insert(
-      'tags',
-      {'name': name},
-      conflictAlgorithm: ConflictAlgorithm.ignore,
-    );
-  }
-
-  /// Lấy tất cả tag
-  Future<List<Tag>> fetchTags() async {
-    final db = await database;
-    final result = await db.query('tags');
-    return result.map((e) => Tag.fromMap(e)).toList();
-  }
-
-  /// Gán tag cho note
-  Future<void> addTagToNote(int noteId, int tagId) async {
-    final db = await database;
-    await db.insert(
-      'note_tags',
-      {
-        'noteId': noteId,
-        'tagId': tagId,
-      },
-      conflictAlgorithm: ConflictAlgorithm.ignore,
-    );
-  }
-
-  /// Lấy tag của 1 note
-  Future<List<Tag>> getTagsOfNote(int noteId) async {
+  Future<List<Note>> getNotesByTag(int tagId) async {
     final db = await database;
 
     final result = await db.rawQuery('''
-      SELECT tags.* FROM tags
-      INNER JOIN note_tags ON tags.id = note_tags.tagId
-      WHERE note_tags.noteId = ?
-    ''', [noteId]);
+      SELECT notes.* FROM notes
+      INNER JOIN note_tags ON notes.id = note_tags.noteId
+      WHERE note_tags.tagId = ?
+      ORDER BY notes.isPinned DESC, notes.createdAt DESC
+    ''', [tagId]);
 
-    return result.map((e) => Tag.fromMap(e)).toList();
+    return result.map((e) => Note.fromMap(e)).toList();
   }
 
-  /// Xóa tag khỏi note
-  Future<void> removeTagFromNote(int noteId, int tagId) async {
-    final db = await database;
-    await db.delete(
-      'note_tags',
-      where: 'noteId = ? AND tagId = ?',
-      whereArgs: [noteId, tagId],
-    );
-  }
+/// Tạo tag mới (không trùng tên)
+Future<int> createTag(String name) async {
+  final db = await database;
+  return await db.insert(
+    'tags',
+    {'name': name},
+    conflictAlgorithm: ConflictAlgorithm.ignore,
+  );
+}
+
+/// Lấy tất cả tag
+Future<List<Tag>> fetchTags() async {
+  final db = await database;
+  final result = await db.query('tags');
+  return result.map((e) => Tag.fromMap(e)).toList();
+}
+
+/// Gán tag cho note
+Future<void> addTagToNote(int noteId, int tagId) async {
+  final db = await database;
+  await db.insert(
+    'note_tags',
+    {
+      'noteId': noteId,
+      'tagId': tagId,
+    },
+    conflictAlgorithm: ConflictAlgorithm.ignore,
+  );
+}
+
+/// Bỏ tag khỏi note
+Future<void> removeTagFromNote(int noteId, int tagId) async {
+  final db = await database;
+  await db.delete(
+    'note_tags',
+    where: 'noteId = ? AND tagId = ?',
+    whereArgs: [noteId, tagId],
+  );
+}
+
+/// Lấy tag của 1 note
+Future<List<Tag>> getTagsOfNote(int noteId) async {
+  final db = await database;
+
+  final result = await db.rawQuery('''
+    SELECT tags.* FROM tags
+    INNER JOIN note_tags ON tags.id = note_tags.tagId
+    WHERE note_tags.noteId = ?
+  ''', [noteId]);
+
+  return result.map((e) => Tag.fromMap(e)).toList();
+}
+
 
   // ================= CLOSE =================
   Future<void> close() async {
