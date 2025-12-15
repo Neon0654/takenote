@@ -3,6 +3,8 @@ import '../../data/models/note.dart';
 import '../../data/models/tag.dart';
 import 'search_page.dart';
 import 'tag_management_page.dart';
+import '../../utils/share_utils.dart';
+
 
 class HomePage extends StatelessWidget {
   final List<Note> notes;
@@ -112,6 +114,8 @@ class HomePage extends StatelessWidget {
                         margin: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),
                         child: ListTile(
+
+                          
                           leading: IconButton(
                             icon: Icon(
                               note.isPinned
@@ -167,12 +171,24 @@ class HomePage extends StatelessWidget {
                                 ),
                             ],
                           ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete,
-                                color: Colors.red),
-                            onPressed: () =>
-                                onDeleteNote(note.id!),
-                          ),
+                          trailing: Row(
+  mainAxisSize: MainAxisSize.min,
+  children: [
+    IconButton(
+      icon: const Icon(Icons.share, color: Colors.blue),
+      tooltip: 'Chia sẻ Zalo',
+      onPressed: () {
+        ShareUtils.shareNoteToZalo(note);
+      },
+    ),
+    IconButton(
+      icon: const Icon(Icons.delete, color: Colors.red),
+      onPressed: () => onDeleteNote(note.id!),
+    ),
+  ],
+),
+
+                          
                           onTap: () =>
                               onTapNote(note.id!),
                         ),
