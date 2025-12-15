@@ -4,6 +4,10 @@ import '../../data/models/tag.dart';
 import 'search_page.dart';
 import 'tag_management_page.dart';
 import '../../utils/share_utils.dart';
+import '../../data/database/notes_database.dart';
+import '../../data/models/reminder.dart';
+import 'package:intl/intl.dart';
+import '../../utils/confirm_dialog.dart';
 
 
 class HomePage extends StatelessWidget {
@@ -19,6 +23,8 @@ class HomePage extends StatelessWidget {
   final Function(int id) onTapNote;
   final Function(Note note) onTogglePin;
 
+  
+
   const HomePage({
     super.key,
     required this.notes,
@@ -32,11 +38,32 @@ class HomePage extends StatelessWidget {
     required this.onTogglePin,
   });
 
+  String _formatDateTime(DateTime dt) {
+  return DateFormat('dd/MM/yyyy HH:mm').format(dt);
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Quản lý ghi chú'),
+        title: RichText(
+          text: TextSpan(
+            style: Theme.of(context).textTheme.titleLarge,
+            children: [
+              const TextSpan(text: 'Quản lý ghi chú '),
+              TextSpan(
+                text: '(${notes.length})',
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+
         actions: [
           IconButton(
             icon: const Icon(Icons.label),
@@ -144,6 +171,60 @@ class HomePage extends StatelessWidget {
                                 overflow:
                                     TextOverflow.ellipsis,
                               ),
+                              // ===== REMINDER (HIỂN THỊ GIỐNG TAG) =====
+                              FutureBuilder<List<Reminder>>(
+  future: NotesDatabase.instance.getRemindersOfNote(note.id!),
+  builder: (_, snapshot) {
+    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+      return const SizedBox();
+    }
+
+    final reminders = snapshot.data!;
+    final showList = reminders.take(2).toList();
+    final moreCount = reminders.length - showList.length;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Wrap(
+        spacing: 6,
+        children: [
+          // 🔔 HIỂN THỊ TỐI ĐA 2 REMINDER
+          ...showList.map(
+            (r) => Chip(
+              avatar: const Icon(
+                Icons.alarm,
+                size: 16,
+                color: Colors.red,
+              ),
+              label: Text(
+                _formatDateTime(r.remindAt),
+                style: const TextStyle(fontSize: 12),
+              ),
+              backgroundColor: Colors.red.shade50,
+              visualDensity: VisualDensity.compact,
+            ),
+          ),
+
+          // ➕ NẾU CÒN NHIỀU HƠN
+          if (moreCount > 0)
+            Chip(
+              label: Text(
+                '+$moreCount',
+                style: const TextStyle(fontSize: 12),
+              ),
+              backgroundColor: Colors.grey.shade300,
+              visualDensity: VisualDensity.compact,
+            ),
+        ],
+      ),
+    );
+  },
+),
+
+
+
+
+
                               if (tagsOfNote.isNotEmpty)
                                 Padding(
                                   padding:
@@ -183,8 +264,18 @@ class HomePage extends StatelessWidget {
     ),
     IconButton(
       icon: const Icon(Icons.delete, color: Colors.red),
-      onPressed: () => onDeleteNote(note.id!),
+      onPressed: () async {
+        final ok = await showConfirmDialog(
+          context: context,
+          content: 'Xóa ghi chú này?',
+        );
+
+        if (ok) {
+          onDeleteNote(note.id!);
+        }
+      },
     ),
+
   ],
 ),
 

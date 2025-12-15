@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../data/database/notes_database.dart';
 import '../../data/models/tag.dart';
+import '../../utils/confirm_dialog.dart';
 
 class TagManagementPage extends StatefulWidget {
   const TagManagementPage({super.key});
@@ -81,7 +82,17 @@ class _TagManagementPageState extends State<TagManagementPage> {
                     title: Text(tag.name),
                     trailing: IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => _deleteTag(tag),
+                      onPressed: () async {
+                        final ok = await showConfirmDialog(
+                          context: context,
+                          content: 'Xóa nhãn "${tag.name}"?',
+                        );
+
+                        if (ok) {
+                          _deleteTag(tag);
+                        }
+                      },
+
                     ),
                   );
                 },
