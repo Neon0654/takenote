@@ -1,6 +1,7 @@
 import 'dart:async';
 import '../data/models/note.dart';
 
+
 class EditNoteController {
   final Note note;
   final void Function(String title, String content) onSave;

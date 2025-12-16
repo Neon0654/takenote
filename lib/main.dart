@@ -1,9 +1,19 @@
 import 'package:flutter/material.dart';
 import 'controllers/notes_controller.dart';
+import 'services/notification_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService.init();
+
+  // 🔥 ANDROID 13+ – XIN QUYỀN NGAY KHI MỞ APP
+  await NotificationService.requestPermission();
+
   runApp(const MyApp());
 }
+
+
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
