@@ -7,7 +7,6 @@ import '../../controllers/edit_note_controller.dart';
 import '../../data/database/notes_database.dart';
 import '../widgets/tag_selector_dialog.dart';
 import '../../utils/confirm_dialog.dart';
-import '../../utils/confirm_dialog.dart';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
