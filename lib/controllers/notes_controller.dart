@@ -82,14 +82,9 @@ class _NotesControllerState extends State<NotesController> {
         content: content,
         createdAt: old.createdAt,
         isPinned: old.isPinned,
+        isDeleted: old.isDeleted,
       ),
     );
-    loadNotes();
-  }
-
-  /// DELETE NOTE
-  Future<void> deleteNote(int id) async {
-    await NotesDatabase.instance.deleteNote(id);
     loadNotes();
   }
 
@@ -102,6 +97,7 @@ class _NotesControllerState extends State<NotesController> {
         content: note.content,
         createdAt: note.createdAt,
         isPinned: !note.isPinned,
+        isDeleted: note.isDeleted,
       ),
     );
     loadNotes();
@@ -148,7 +144,6 @@ class _NotesControllerState extends State<NotesController> {
       selectedTag: selectedTag,
       onSelectTag: onSelectTag,
       onAddNote: openAddNotePage,
-      onDeleteNote: deleteNote,
       onTapNote: openEditNotePage,
       onTogglePin: togglePin,
     );
