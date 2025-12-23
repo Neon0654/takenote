@@ -535,6 +535,31 @@ Future<Map<int, int>> countNotesByFolder() async {
   return map;
 }
 
+Future<void> moveNoteToFolder({
+  required int noteId,
+  int? folderId, // null = đưa ra ngoài folder
+}) async {
+  final db = await database;
+
+  // 🔥 Xóa liên kết cũ
+  await db.delete(
+    'folder_notes',
+    where: 'noteId = ?',
+    whereArgs: [noteId],
+  );
+
+  // 🔥 Nếu có folder mới → thêm lại
+  if (folderId != null) {
+    await db.insert(
+      'folder_notes',
+      {
+        'noteId': noteId,
+        'folderId': folderId,
+      },
+      conflictAlgorithm: ConflictAlgorithm.ignore,
+    );
+  }
+}
 
 
 

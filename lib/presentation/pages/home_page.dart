@@ -15,6 +15,8 @@ import 'trash_page.dart';
 import 'create_folder_dialog.dart';
 import 'folder_list_page.dart';
 import '../../data/models/folder.dart';
+import '../../data/models/folder.dart';
+import '../../data/database/notes_database.dart';
 
 
 class HomePage extends StatefulWidget {
@@ -76,6 +78,52 @@ class _HomePageState extends State<HomePage> {
     await widget.onRefresh();
   }
 
+  Future<void> _moveSelectedNotes() async {
+    final ids = selectionController.selectedIds;
+    if (ids.isEmpty) return;
+
+    final folders = await NotesDatabase.instance.fetchFolders();
+
+    final folderId = await showDialog<int?>(
+      context: context,
+      builder: (_) => SimpleDialog(
+        title: const Text('Di chuyển ghi chú'),
+        children: [
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, null),
+            child: const Text('📂 Ngoài thư mục'),
+          ),
+          const Divider(),
+          ...folders.map(
+            (f) => SimpleDialogOption(
+              onPressed: () => Navigator.pop(context, f.id),
+              child: Row(
+                children: [
+                  Icon(Icons.folder, color: Color(f.color)),
+                  const SizedBox(width: 8),
+                  Text(f.name),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (folderId == null && !mounted) return;
+
+    for (final id in ids) {
+      await NotesDatabase.instance.moveNoteToFolder(
+        noteId: id,
+        folderId: folderId,
+      );
+    }
+
+    selectionController.clear();
+    await widget.onRefresh();
+  }
+
+
   @override
   Widget build(BuildContext context) {
     final notes = widget.notes;
@@ -102,20 +150,28 @@ class _HomePageState extends State<HomePage> {
 
             // ================= ACTIONS =================
             actions: selectionController.isSelectionMode
-                ? [
-                    IconButton(
-                      icon: const Icon(Icons.select_all),
-                      onPressed: () {
-                        selectionController.selectAll(
-                          notes.map((e) => e.id!).toList(),
-                        );
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline),
-                      onPressed: _moveSelectedToTrash,
-                    ),
-                  ]
+              ? [
+                  IconButton(
+                    tooltip: 'Di chuyển',
+                    icon: const Icon(Icons.drive_file_move_outline),
+                    onPressed: _moveSelectedNotes,
+                  ),
+                  IconButton(
+                    tooltip: 'Chọn tất cả',
+                    icon: const Icon(Icons.select_all),
+                    onPressed: () {
+                      selectionController.selectAll(
+                        notes.map((e) => e.id!).toList(),
+                      );
+                    },
+                  ),
+                  IconButton(
+                    tooltip: 'Xóa',
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: _moveSelectedToTrash,
+                  ),
+                ]
+
                 : widget.isFolderMode
         ? [
             PopupMenuButton<String>(
