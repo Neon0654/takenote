@@ -12,8 +12,13 @@ import '../../controllers/selection_controller.dart';
 import 'search_page.dart';
 import 'tag_management_page.dart';
 import 'trash_page.dart';
+import 'create_folder_dialog.dart';
+import 'folder_list_page.dart';
+import '../../data/models/folder.dart';
+
 
 class HomePage extends StatefulWidget {
+  final bool isFolderMode;
   final List<Note> notes;
   final Map<int, List<Tag>> noteTags;
 
@@ -24,6 +29,11 @@ class HomePage extends StatefulWidget {
   final VoidCallback onAddNote;
   final Function(int id) onTapNote;
   final Function(Note note) onTogglePin;
+  
+  final Folder? folder;
+
+
+  final Future<void> Function() onRefresh;
 
   const HomePage({
     super.key,
@@ -35,6 +45,9 @@ class HomePage extends StatefulWidget {
     required this.onAddNote,
     required this.onTapNote,
     required this.onTogglePin,
+    required this.onRefresh,
+    this.isFolderMode = false,
+    this.folder,
   });
 
   @override
@@ -44,11 +57,14 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final SelectionController selectionController = SelectionController();
 
+  // ================= MOVE TO TRASH (MULTI) =================
   Future<void> _moveSelectedToTrash() async {
+    final count = selectionController.selectedIds.length;
+    if (count == 0) return;
+
     final ok = await showConfirmDialog(
       context: context,
-      content:
-          'Chuyển ${selectionController.selectedIds.length} ghi chú vào thùng rác?',
+      content: 'Chuyển $count ghi chú vào thùng rác?',
     );
     if (!ok) return;
 
@@ -57,6 +73,7 @@ class _HomePageState extends State<HomePage> {
     }
 
     selectionController.clear();
+    await widget.onRefresh();
   }
 
   @override
@@ -67,6 +84,7 @@ class _HomePageState extends State<HomePage> {
       animation: selectionController,
       builder: (_, __) {
         return Scaffold(
+          // ================= APP BAR =================
           appBar: AppBar(
             leading: selectionController.isSelectionMode
                 ? IconButton(
@@ -74,9 +92,15 @@ class _HomePageState extends State<HomePage> {
                     onPressed: selectionController.clear,
                   )
                 : null,
-            title: selectionController.isSelectionMode
-                ? Text('Đã chọn ${selectionController.selectedIds.length}')
-                : Text('Quản lý ghi chú (${notes.length})'),
+            title: Text(
+              selectionController.isSelectionMode
+                  ? '${selectionController.selectedIds.length} đã chọn'
+                  : widget.isFolderMode
+                      ? 'Ghi chú trong thư mục'
+                      : 'Quản lý ghi chú (${notes.length})',
+            ),
+
+            // ================= ACTIONS =================
             actions: selectionController.isSelectionMode
                 ? [
                     IconButton(
@@ -92,108 +116,210 @@ class _HomePageState extends State<HomePage> {
                       onPressed: _moveSelectedToTrash,
                     ),
                   ]
-                : [
-                    PopupMenuButton<String>(
-                      icon: const Icon(Icons.more_vert),
-                      onSelected: (value) async {
-                        switch (value) {
-                          case 'search':
-                            final noteId = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const SearchPage(),
-                              ),
-                            );
-                            if (noteId != null) {
-                              widget.onTapNote(noteId);
-                            }
-                            break;
-                          case 'tags':
-                            Navigator.push(
+                : widget.isFolderMode
+        ? [
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert),
+              onSelected: (value) async {
+                switch (value) {
+                  case 'edit':
+                    await showDialog(
+                      context: context,
+                      builder: (_) => CreateFolderDialog(
+                        folder: widget.folder!,
+                      ),
+                    );
+                    await widget.onRefresh();
+                    break;
+
+                  case 'search':
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const SearchPage(),
+                      ),
+                    );
+                    break;
+
+                  case 'trash':
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const TrashPage(),
+                      ),
+                    );
+                    break;
+                }
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(
+                  value: 'edit',
+                  child: ListTile(
+                    leading: Icon(Icons.edit),
+                    title: Text('Chỉnh sửa'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'search',
+                  child: ListTile(
+                    leading: Icon(Icons.search),
+                    title: Text('Tìm kiếm'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'trash',
+                  child: ListTile(
+                    leading: Icon(Icons.delete_outline),
+                    title: Text('Thùng rác'),
+                  ),
+                ),
+              ],
+            ),
+          ]
+                    // ===== MENU HOME =====
+                    : [
+                        IconButton(
+                          icon: const Icon(Icons.folder),
+                          onPressed: () async {
+                            await Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (_) =>
-                                    const TagManagementPage(),
+                                    const FolderListPage(),
                               ),
                             );
-                            break;
-                          case 'trash':
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const TrashPage(),
+                          },
+                        ),
+                        PopupMenuButton<String>(
+                          icon: const Icon(Icons.more_vert),
+                          onSelected: (value) async {
+                            switch (value) {
+                              case 'search':
+                                final noteId =
+                                    await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const SearchPage(),
+                                  ),
+                                );
+                                if (noteId != null) {
+                                  widget.onTapNote(noteId);
+                                }
+                                break;
+
+                              case 'tags':
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const TagManagementPage(),
+                                  ),
+                                );
+                                break;
+
+                              case 'folder':
+                                await showDialog(
+                                  context: context,
+                                  builder: (_) =>
+                                      const CreateFolderDialog(),
+                                );
+                                break;
+
+                              case 'trash':
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const TrashPage(),
+                                  ),
+                                );
+                                break;
+                            }
+                          },
+                          itemBuilder: (_) => const [
+                            PopupMenuItem(
+                              value: 'search',
+                              child: ListTile(
+                                leading: Icon(Icons.search),
+                                title: Text('Tìm kiếm'),
                               ),
-                            );
-                            break;
-                        }
-                      },
-                      itemBuilder: (_) => const [
-                        PopupMenuItem(
-                          value: 'search',
-                          child: ListTile(
-                            leading: Icon(Icons.search),
-                            title: Text('Tìm kiếm'),
-                          ),
-                        ),
-                        PopupMenuItem(
-                          value: 'tags',
-                          child: ListTile(
-                            leading: Icon(Icons.label),
-                            title: Text('Quản lý nhãn'),
-                          ),
-                        ),
-                        PopupMenuItem(
-                          value: 'trash',
-                          child: ListTile(
-                            leading: Icon(Icons.delete_outline),
-                            title: Text('Thùng rác'),
-                          ),
+                            ),
+                            PopupMenuItem(
+                              value: 'tags',
+                              child: ListTile(
+                                leading: Icon(Icons.label),
+                                title: Text('Quản lý nhãn'),
+                              ),
+                            ),
+                            PopupMenuItem(
+                              value: 'folder',
+                              child: ListTile(
+                                leading: Icon(Icons.folder),
+                                title: Text('Thêm thư mục'),
+                              ),
+                            ),
+                            PopupMenuItem(
+                              value: 'trash',
+                              child: ListTile(
+                                leading:
+                                    Icon(Icons.delete_outline),
+                                title: Text('Thùng rác'),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
-                    ),
-                  ],
           ),
 
+          // ================= BODY =================
           body: Column(
             children: [
-              // ===== TAG BAR =====
-              SizedBox(
-                height: 46,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12),
-                  children: [
-                    ChoiceChip(
-                      label: const Text('Tất cả'),
-                      selected: widget.selectedTag == null,
-                      onSelected: (_) => widget.onSelectTag(null),
-                    ),
-                    const SizedBox(width: 8),
-                    ...widget.tags.map(
-                      (tag) => Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: ChoiceChip(
-                          label: Text(tag.name),
-                          selected:
-                              widget.selectedTag?.id == tag.id,
-                          onSelected: (_) =>
-                              widget.onSelectTag(tag),
+              // ===== TAG BAR (CHỈ HOME) =====
+              if (!widget.isFolderMode)
+                SizedBox(
+                  height: 46,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12),
+                    children: [
+                      ChoiceChip(
+                        label: const Text('Tất cả'),
+                        selected: widget.selectedTag == null,
+                        onSelected: (_) =>
+                            widget.onSelectTag(null),
+                      ),
+                      const SizedBox(width: 8),
+                      ...widget.tags.map(
+                        (tag) => Padding(
+                          padding:
+                              const EdgeInsets.only(right: 8),
+                          child: ChoiceChip(
+                            label: Text(tag.name),
+                            selected:
+                                widget.selectedTag?.id ==
+                                    tag.id,
+                            onSelected: (_) =>
+                                widget.onSelectTag(tag),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
 
               const Divider(height: 1),
 
               // ===== GRID NOTE =====
               Expanded(
                 child: notes.isEmpty
-                    ? const Center(child: Text('Chưa có ghi chú'))
+                    ? const Center(
+                        child: Text('Chưa có ghi chú'),
+                      )
                     : GridView.builder(
-                        padding: const EdgeInsets.all(12),
+                        padding:
+                            const EdgeInsets.all(12),
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
@@ -208,14 +334,18 @@ class _HomePageState extends State<HomePage> {
                               widget.noteTags[note.id] ?? [];
 
                           return GestureDetector(
-                            onTap: selectionController.isSelectionMode
-                                ? () => selectionController.toggle(note.id!)
-                                : () => widget.onTapNote(note.id!),
+                            onTap:
+                                selectionController.isSelectionMode
+                                    ? () => selectionController
+                                        .toggle(note.id!)
+                                    : () => widget
+                                        .onTapNote(note.id!),
                             onLongPress: () =>
-                                selectionController.startSelection(
-                                    note.id!),
+                                selectionController
+                                    .startSelection(note.id!),
                             child: Container(
-                              padding: const EdgeInsets.all(12),
+                              padding:
+                                  const EdgeInsets.all(12),
                               decoration: BoxDecoration(
                                 color: selectionController
                                         .isSelected(note.id!)
@@ -233,7 +363,6 @@ class _HomePageState extends State<HomePage> {
                                 crossAxisAlignment:
                                     CrossAxisAlignment.start,
                                 children: [
-                                  // ===== TITLE + PIN =====
                                   Row(
                                     children: [
                                       Expanded(
@@ -242,7 +371,8 @@ class _HomePageState extends State<HomePage> {
                                           maxLines: 2,
                                           overflow:
                                               TextOverflow.ellipsis,
-                                          style: const TextStyle(
+                                          style:
+                                              const TextStyle(
                                             fontWeight:
                                                 FontWeight.w600,
                                             fontSize: 15,
@@ -251,7 +381,8 @@ class _HomePageState extends State<HomePage> {
                                       ),
                                       GestureDetector(
                                         onTap: () =>
-                                            widget.onTogglePin(note),
+                                            widget.onTogglePin(
+                                                note),
                                         child: Icon(
                                           note.isPinned
                                               ? Icons.push_pin
@@ -265,10 +396,7 @@ class _HomePageState extends State<HomePage> {
                                       ),
                                     ],
                                   ),
-
                                   const SizedBox(height: 6),
-
-                                  // ===== CONTENT =====
                                   Expanded(
                                     child: Text(
                                       note.content,
@@ -277,11 +405,7 @@ class _HomePageState extends State<HomePage> {
                                           TextOverflow.ellipsis,
                                     ),
                                   ),
-
-                                  // ===== REMINDER (1 + +N) =====
                                   _buildReminder(note),
-
-                                  // ===== TAG =====
                                   if (tagsOfNote.isNotEmpty)
                                     Wrap(
                                       spacing: 4,
@@ -303,8 +427,6 @@ class _HomePageState extends State<HomePage> {
                                           )
                                           .toList(),
                                     ),
-
-                                  // ===== DATE (DƯỚI TAG) =====
                                   _buildDate(note),
                                 ],
                               ),
@@ -328,12 +450,14 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ===== REMINDER: 1 CÁI + (+N) =====
+  // ================= REMINDER =================
   Widget _buildReminder(Note note) {
     return FutureBuilder<List<Reminder>>(
-      future: NotesDatabase.instance.getRemindersOfNote(note.id!),
+      future:
+          NotesDatabase.instance.getRemindersOfNote(note.id!),
       builder: (_, snapshot) {
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+        if (!snapshot.hasData ||
+            snapshot.data!.isEmpty) {
           return const SizedBox();
         }
 
@@ -345,24 +469,26 @@ class _HomePageState extends State<HomePage> {
           spacing: 4,
           children: [
             Chip(
-              avatar: const Icon(
-                Icons.alarm,
-                size: 14,
-                color: Colors.red,
-              ),
+              avatar: const Icon(Icons.alarm,
+                  size: 14, color: Colors.red),
               label: Text(
-                DateFormat('dd/MM HH:mm').format(first.remindAt),
-                style: const TextStyle(fontSize: 11),
+                DateFormat('dd/MM HH:mm')
+                    .format(first.remindAt),
+                style:
+                    const TextStyle(fontSize: 11),
               ),
-              visualDensity: VisualDensity.compact,
+              visualDensity:
+                  VisualDensity.compact,
             ),
             if (more > 0)
               Chip(
                 label: Text(
                   '+$more',
-                  style: const TextStyle(fontSize: 11),
+                  style:
+                      const TextStyle(fontSize: 11),
                 ),
-                visualDensity: VisualDensity.compact,
+                visualDensity:
+                    VisualDensity.compact,
               ),
           ],
         );
@@ -370,12 +496,13 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ===== DATE =====
+  // ================= DATE =================
   Widget _buildDate(Note note) {
     return Padding(
       padding: const EdgeInsets.only(top: 4),
       child: Text(
-        DateFormat('dd/MM/yyyy').format(note.createdAt),
+        DateFormat('dd/MM/yyyy')
+            .format(note.createdAt),
         style: TextStyle(
           fontSize: 11,
           color: Colors.grey.shade600,

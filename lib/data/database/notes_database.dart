@@ -6,6 +6,9 @@ import '../models/note.dart';
 import '../models/tag.dart';
 import '../models/reminder.dart';
 import '../models/attachment.dart';
+import '../models/folder.dart';
+
+
 
 class NotesDatabase {
   // ================= SINGLETON =================
@@ -25,7 +28,7 @@ class NotesDatabase {
     if (Platform.environment.containsKey('FLUTTER_TEST')) {
       return openDatabase(
         inMemoryDatabasePath,
-        version: 8,
+        version: 9,
         onCreate: _createDB,
         onUpgrade: _upgradeDB,
       );
@@ -36,7 +39,7 @@ class NotesDatabase {
 
     return openDatabase(
       path,
-      version: 8,
+      version: 9,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -80,6 +83,9 @@ class NotesDatabase {
       )
     ''');
 
+
+    
+
     await db.execute('''
       CREATE TABLE attachments (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -88,6 +94,24 @@ class NotesDatabase {
         filePath TEXT
       )
     ''');
+
+        await db.execute('''
+      CREATE TABLE folders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        color INTEGER,
+        createdAt TEXT
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE folder_notes (
+        folderId INTEGER,
+        noteId INTEGER,
+        PRIMARY KEY (folderId, noteId)
+      )
+    ''');
+
   }
 
   // ================= UPGRADE DB =================
@@ -148,6 +172,26 @@ class NotesDatabase {
         'ALTER TABLE notes ADD COLUMN isDeleted INTEGER DEFAULT 0',
       );
     }
+
+        if (oldVersion < 9) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS folders (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT,
+          color INTEGER,
+          createdAt TEXT
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS folder_notes (
+          folderId INTEGER,
+          noteId INTEGER,
+          PRIMARY KEY (folderId, noteId)
+        )
+      ''');
+    }
+
   }
 
   // ================= NOTE =================
@@ -363,4 +407,140 @@ class NotesDatabase {
     final db = await database;
     await db.close();
   }
+  // ================= FOLDER =================
+
+  Future<int> createFolder(Folder folder) async {
+    final db = await database;
+    return await db.insert('folders', folder.toMap());
+  }
+
+  Future<List<Folder>> fetchFolders() async {
+    final db = await database;
+    final result = await db.query(
+      'folders',
+      orderBy: 'color ASC, createdAt DESC',
+    );
+    return result.map((e) => Folder.fromMap(e)).toList();
+  }
+
+
+  Future<int> countNotesInFolder(int folderId) async {
+    final db = await database;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM folder_notes WHERE folderId = ?',
+      [folderId],
+    );
+
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
+  Future<void> addNoteToFolder(int folderId, int noteId) async {
+    final db = await database;
+    await db.insert(
+      'folder_notes',
+      {'folderId': folderId, 'noteId': noteId},
+      conflictAlgorithm: ConflictAlgorithm.ignore,
+    );
+  }
+
+  Future<void> deleteFolder(int folderId) async {
+  final db = await database;
+
+    // Xóa liên kết note – folder trước
+    await db.delete(
+      'folder_notes',
+      where: 'folderId = ?',
+      whereArgs: [folderId],
+    );
+
+    // Xóa folder
+    await db.delete(
+      'folders',
+      where: 'id = ?',
+      whereArgs: [folderId],
+    );
+  }
+  // ================= FOLDER NOTES =================
+
+  Future<List<Note>> fetchNotesByFolder(int folderId) async {
+    final db = await database;
+
+    final result = await db.rawQuery('''
+      SELECT notes.* FROM notes
+      INNER JOIN folder_notes
+        ON notes.id = folder_notes.noteId
+      WHERE folder_notes.folderId = ?
+        AND notes.isDeleted = 0
+      ORDER BY notes.isPinned DESC, notes.createdAt DESC
+    ''', [folderId]);
+
+    return result.map((e) => Note.fromMap(e)).toList();
+  }
+
+  Future<void> linkNoteToFolder(int noteId, int folderId) async {
+    final db = await database;
+
+    await db.insert(
+      'folder_notes',
+      {
+        'noteId': noteId,
+        'folderId': folderId,
+      },
+      conflictAlgorithm: ConflictAlgorithm.ignore,
+    );
+  }
+
+  // ================= HOME NOTES (KHÔNG THUỘC FOLDER) =================
+  Future<List<Note>> fetchNotesWithoutFolder() async {
+    final db = await database;
+
+    final result = await db.rawQuery('''
+      SELECT * FROM notes
+      WHERE isDeleted = 0
+        AND id NOT IN (
+          SELECT noteId FROM folder_notes
+        )
+      ORDER BY isPinned DESC, createdAt DESC
+    ''');
+
+    return result.map((e) => Note.fromMap(e)).toList();
+  }
+
+  Future<void> updateFolderName(int id, String name) async {
+    final db = await database;
+    await db.update(
+      'folders',
+      {'name': name},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+Future<Map<int, int>> countNotesByFolder() async {
+  final db = await database;
+
+  final result = await db.rawQuery('''
+    SELECT fn.folderId, COUNT(fn.noteId) as total
+    FROM folder_notes fn
+    INNER JOIN notes n ON n.id = fn.noteId
+    WHERE n.isDeleted = 0
+    GROUP BY fn.folderId
+  ''');
+
+  final Map<int, int> map = {};
+  for (final row in result) {
+    map[row['folderId'] as int] = row['total'] as int;
+  }
+
+  return map;
+}
+
+
+
+
+
+
+
+
+  
 }
