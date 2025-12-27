@@ -6,6 +6,9 @@ import '../models/note.dart';
 import '../models/tag.dart';
 import '../models/reminder.dart';
 import '../models/attachment.dart';
+import '../models/folder.dart';
+
+
 
 class NotesDatabase {
   // ================= SINGLETON =================
@@ -25,7 +28,7 @@ class NotesDatabase {
     if (Platform.environment.containsKey('FLUTTER_TEST')) {
       return openDatabase(
         inMemoryDatabasePath,
-        version: 7,
+        version: 9,
         onCreate: _createDB,
         onUpgrade: _upgradeDB,
       );
@@ -36,7 +39,7 @@ class NotesDatabase {
 
     return openDatabase(
       path,
-      version: 7,
+      version: 9,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -44,18 +47,17 @@ class NotesDatabase {
 
   // ================= CREATE DB =================
   Future _createDB(Database db, int version) async {
-    // NOTES
     await db.execute('''
       CREATE TABLE notes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT,
         content TEXT,
         createdAt TEXT,
-        isPinned INTEGER DEFAULT 0
+        isPinned INTEGER DEFAULT 0,
+        isDeleted INTEGER DEFAULT 0
       )
     ''');
 
-    // TAGS
     await db.execute('''
       CREATE TABLE tags (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -63,7 +65,6 @@ class NotesDatabase {
       )
     ''');
 
-    // NOTE - TAG (N-N)
     await db.execute('''
       CREATE TABLE note_tags (
         noteId INTEGER,
@@ -72,7 +73,6 @@ class NotesDatabase {
       )
     ''');
 
-    // REMINDER
     await db.execute('''
       CREATE TABLE reminders (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -81,16 +81,34 @@ class NotesDatabase {
         isDone INTEGER DEFAULT 0,
         notificationId INTEGER
       )
-
     ''');
 
-    // ATTACHMENTS
+
+    
+
     await db.execute('''
       CREATE TABLE attachments (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         noteId INTEGER,
         fileName TEXT,
         filePath TEXT
+      )
+    ''');
+
+        await db.execute('''
+      CREATE TABLE folders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        color INTEGER,
+        createdAt TEXT
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE folder_notes (
+        folderId INTEGER,
+        noteId INTEGER,
+        PRIMARY KEY (folderId, noteId)
       )
     ''');
 
@@ -149,38 +167,73 @@ class NotesDatabase {
       );
     }
 
-    
+    if (oldVersion < 8) {
+      await db.execute(
+        'ALTER TABLE notes ADD COLUMN isDeleted INTEGER DEFAULT 0',
+      );
+    }
+
+        if (oldVersion < 9) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS folders (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT,
+          color INTEGER,
+          createdAt TEXT
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS folder_notes (
+          folderId INTEGER,
+          noteId INTEGER,
+          PRIMARY KEY (folderId, noteId)
+        )
+      ''');
+    }
+
   }
 
-  // ================= NOTE CRUD =================
+  // ================= NOTE =================
+
+  /// CREATE
   Future<int> createNote(Note note) async {
     final db = await database;
     return await db.insert('notes', note.toMap());
   }
 
+  /// FETCH NORMAL NOTES
   Future<List<Note>> fetchNotes() async {
     final db = await database;
     final result = await db.query(
       'notes',
+      where: 'isDeleted = 0',
       orderBy: 'isPinned DESC, createdAt DESC',
     );
     return result.map((e) => Note.fromMap(e)).toList();
   }
 
-  Future<Note?> getNoteById(int id) async {
+  /// FETCH TRASH
+  Future<List<Note>> fetchTrashNotes() async {
     final db = await database;
     final result = await db.query(
       'notes',
-      where: 'id = ?',
-      whereArgs: [id],
+      where: 'isDeleted = 1',
+      orderBy: 'createdAt DESC',
     );
+    return result.map((e) => Note.fromMap(e)).toList();
+  }
 
-    if (result.isNotEmpty) {
-      return Note.fromMap(result.first);
-    }
+  /// GET BY ID
+  Future<Note?> getNoteById(int id) async {
+    final db = await database;
+    final result =
+        await db.query('notes', where: 'id = ?', whereArgs: [id]);
+    if (result.isNotEmpty) return Note.fromMap(result.first);
     return null;
   }
 
+  /// UPDATE
   Future<int> updateNote(Note note) async {
     final db = await database;
     return await db.update(
@@ -191,42 +244,52 @@ class NotesDatabase {
     );
   }
 
-  Future<int> deleteNote(int id) async {
+  /// MOVE TO TRASH (XÓA MỀM)
+  Future<void> moveNoteToTrash(int id) async {
     final db = await database;
-
-    // Xóa reminder trước
-    await db.delete(
-      'reminders',
-      where: 'noteId = ?',
-      whereArgs: [id],
-    );
-
-    // Xóa liên kết tag
-    await db.delete(
-      'note_tags',
-      where: 'noteId = ?',
-      whereArgs: [id],
-    );
-
-    return await db.delete(
+    await db.update(
       'notes',
+      {'isDeleted': 1, 'isPinned': 0},
       where: 'id = ?',
       whereArgs: [id],
     );
   }
 
-  // ================= SEARCH =================
-  Future<List<Note>> searchNotesWithRange(
-    String keyword,
-    DateTime fromDate,
-  ) async {
+  /// RESTORE
+  Future<void> restoreNote(int id) async {
+    final db = await database;
+    await db.update(
+      'notes',
+      {'isDeleted': 0},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  /// DELETE PERMANENT
+  Future<void> deleteNotePermanently(int id) async {
     final db = await database;
 
+    await db.delete('reminders',
+        where: 'noteId = ?', whereArgs: [id]);
+    await db.delete('note_tags',
+        where: 'noteId = ?', whereArgs: [id]);
+    await db.delete('attachments',
+        where: 'noteId = ?', whereArgs: [id]);
+
+    await db.delete('notes', where: 'id = ?', whereArgs: [id]);
+  }
+
+  // ================= SEARCH =================
+  Future<List<Note>> searchNotesWithRange(
+      String keyword, DateTime fromDate) async {
+    final db = await database;
     final result = await db.query(
       'notes',
       where: '''
-        (title LIKE ? OR content LIKE ?)
-        AND createdAt >= ?
+        isDeleted = 0 AND
+        (title LIKE ? OR content LIKE ?) AND
+        createdAt >= ?
       ''',
       whereArgs: [
         '%$keyword%',
@@ -235,18 +298,16 @@ class NotesDatabase {
       ],
       orderBy: 'isPinned DESC, createdAt DESC',
     );
-
     return result.map((e) => Note.fromMap(e)).toList();
   }
 
   // ================= TAG =================
   Future<List<Note>> getNotesByTag(int tagId) async {
     final db = await database;
-
     final result = await db.rawQuery('''
       SELECT notes.* FROM notes
       INNER JOIN note_tags ON notes.id = note_tags.noteId
-      WHERE note_tags.tagId = ?
+      WHERE note_tags.tagId = ? AND notes.isDeleted = 0
       ORDER BY notes.isPinned DESC, notes.createdAt DESC
     ''', [tagId]);
 
@@ -288,7 +349,6 @@ class NotesDatabase {
 
   Future<List<Tag>> getTagsOfNote(int noteId) async {
     final db = await database;
-
     final result = await db.rawQuery('''
       SELECT tags.* FROM tags
       INNER JOIN note_tags ON tags.id = note_tags.tagId
@@ -297,8 +357,6 @@ class NotesDatabase {
 
     return result.map((e) => Tag.fromMap(e)).toList();
   }
-
-
 
   // ================= REMINDER =================
   Future<int> createReminder(Reminder reminder) async {
@@ -326,9 +384,7 @@ class NotesDatabase {
     );
   }
 
-
   // ================= ATTACHMENT =================
-
   Future<void> addAttachment(Attachment attachment) async {
     final db = await database;
     await db.insert('attachments', attachment.toMap());
@@ -336,29 +392,180 @@ class NotesDatabase {
 
   Future<List<Attachment>> getAttachmentsOfNote(int noteId) async {
     final db = await database;
-    final result = await db.query(
-      'attachments',
-      where: 'noteId = ?',
-      whereArgs: [noteId],
-    );
+    final result =
+        await db.query('attachments', where: 'noteId = ?', whereArgs: [noteId]);
     return result.map((e) => Attachment.fromMap(e)).toList();
   }
 
   Future<void> deleteAttachment(int id) async {
     final db = await database;
-    await db.delete(
-      'attachments',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    await db.delete('attachments', where: 'id = ?', whereArgs: [id]);
   }
-
 
   // ================= CLOSE =================
   Future<void> close() async {
     final db = await database;
     await db.close();
   }
+  // ================= FOLDER =================
+
+  Future<int> createFolder(Folder folder) async {
+    final db = await database;
+    return await db.insert('folders', folder.toMap());
+  }
+
+  Future<List<Folder>> fetchFolders() async {
+    final db = await database;
+    final result = await db.query(
+      'folders',
+      orderBy: 'color ASC, createdAt DESC',
+    );
+    return result.map((e) => Folder.fromMap(e)).toList();
+  }
+
+
+  Future<int> countNotesInFolder(int folderId) async {
+    final db = await database;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM folder_notes WHERE folderId = ?',
+      [folderId],
+    );
+
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
+  Future<void> addNoteToFolder(int folderId, int noteId) async {
+    final db = await database;
+    await db.insert(
+      'folder_notes',
+      {'folderId': folderId, 'noteId': noteId},
+      conflictAlgorithm: ConflictAlgorithm.ignore,
+    );
+  }
+
+  Future<void> deleteFolder(int folderId) async {
+  final db = await database;
+
+    // Xóa liên kết note – folder trước
+    await db.delete(
+      'folder_notes',
+      where: 'folderId = ?',
+      whereArgs: [folderId],
+    );
+
+    // Xóa folder
+    await db.delete(
+      'folders',
+      where: 'id = ?',
+      whereArgs: [folderId],
+    );
+  }
+  // ================= FOLDER NOTES =================
+
+  Future<List<Note>> fetchNotesByFolder(int folderId) async {
+    final db = await database;
+
+    final result = await db.rawQuery('''
+      SELECT notes.* FROM notes
+      INNER JOIN folder_notes
+        ON notes.id = folder_notes.noteId
+      WHERE folder_notes.folderId = ?
+        AND notes.isDeleted = 0
+      ORDER BY notes.isPinned DESC, notes.createdAt DESC
+    ''', [folderId]);
+
+    return result.map((e) => Note.fromMap(e)).toList();
+  }
+
+  Future<void> linkNoteToFolder(int noteId, int folderId) async {
+    final db = await database;
+
+    await db.insert(
+      'folder_notes',
+      {
+        'noteId': noteId,
+        'folderId': folderId,
+      },
+      conflictAlgorithm: ConflictAlgorithm.ignore,
+    );
+  }
+
+  // ================= HOME NOTES (KHÔNG THUỘC FOLDER) =================
+  Future<List<Note>> fetchNotesWithoutFolder() async {
+    final db = await database;
+
+    final result = await db.rawQuery('''
+      SELECT * FROM notes
+      WHERE isDeleted = 0
+        AND id NOT IN (
+          SELECT noteId FROM folder_notes
+        )
+      ORDER BY isPinned DESC, createdAt DESC
+    ''');
+
+    return result.map((e) => Note.fromMap(e)).toList();
+  }
+
+  Future<void> updateFolderName(int id, String name) async {
+    final db = await database;
+    await db.update(
+      'folders',
+      {'name': name},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+Future<Map<int, int>> countNotesByFolder() async {
+  final db = await database;
+
+  final result = await db.rawQuery('''
+    SELECT fn.folderId, COUNT(fn.noteId) as total
+    FROM folder_notes fn
+    INNER JOIN notes n ON n.id = fn.noteId
+    WHERE n.isDeleted = 0
+    GROUP BY fn.folderId
+  ''');
+
+  final Map<int, int> map = {};
+  for (final row in result) {
+    map[row['folderId'] as int] = row['total'] as int;
+  }
+
+  return map;
+}
+
+Future<void> moveNoteToFolder({
+  required int noteId,
+  int? folderId, // null = đưa ra ngoài folder
+}) async {
+  final db = await database;
+
+  // 🔥 Xóa liên kết cũ
+  await db.delete(
+    'folder_notes',
+    where: 'noteId = ?',
+    whereArgs: [noteId],
+  );
+
+  // 🔥 Nếu có folder mới → thêm lại
+  if (folderId != null) {
+    await db.insert(
+      'folder_notes',
+      {
+        'noteId': noteId,
+        'folderId': folderId,
+      },
+      conflictAlgorithm: ConflictAlgorithm.ignore,
+    );
+  }
+}
+
+
+
+
+
+
 
   
 }
