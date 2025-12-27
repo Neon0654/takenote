@@ -17,6 +17,8 @@ import 'folder_list_page.dart';
 import '../../data/models/folder.dart';
 import '../../data/models/folder.dart';
 import '../../data/database/notes_database.dart';
+import '../../controllers/note_sort_type.dart';
+
 
 
 class HomePage extends StatefulWidget {
@@ -52,12 +54,17 @@ class HomePage extends StatefulWidget {
     this.folder,
   });
 
+
+
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
   final SelectionController selectionController = SelectionController();
+  NoteSortType _sortType = NoteSortType.createdDesc;
+
+  
 
   // ================= MOVE TO TRASH (MULTI) =================
   Future<void> _moveSelectedToTrash() async {
@@ -126,7 +133,8 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final notes = widget.notes;
+    final notes = _sortNotes(widget.notes);  // Themem__________________________
+
 
     return AnimatedBuilder(
       animation: selectionController,
@@ -136,9 +144,11 @@ class _HomePageState extends State<HomePage> {
           appBar: AppBar(
             leading: selectionController.isSelectionMode
                 ? IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: selectionController.clear,
-                  )
+                  icon: const Icon(Icons.sort),
+                  tooltip: 'Sắp xếp',
+                  onPressed: _showSortDialog,
+                )
+
                 : null,
             title: Text(
               selectionController.isSelectionMode
@@ -173,65 +183,78 @@ class _HomePageState extends State<HomePage> {
                 ]
 
                 : widget.isFolderMode
-        ? [
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert),
-              onSelected: (value) async {
-                switch (value) {
-                  case 'edit':
-                    await showDialog(
-                      context: context,
-                      builder: (_) => CreateFolderDialog(
-                        folder: widget.folder!,
-                      ),
-                    );
-                    await widget.onRefresh();
-                    break;
+                  ? [
+                      PopupMenuButton<String>(
+  icon: const Icon(Icons.more_vert),
+  onSelected: (value) async {
+    switch (value) {
+      case 'sort':
+        _showSortDialog(); // ✅ SẮP XẾP
+        break;
 
-                  case 'search':
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const SearchPage(),
-                      ),
-                    );
-                    break;
+      case 'edit':
+        await showDialog(
+          context: context,
+          builder: (_) => CreateFolderDialog(
+            folder: widget.folder!,
+          ),
+        );
+        await widget.onRefresh();
+        break;
 
-                  case 'trash':
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const TrashPage(),
-                      ),
-                    );
-                    break;
-                }
-              },
-              itemBuilder: (_) => const [
-                PopupMenuItem(
-                  value: 'edit',
-                  child: ListTile(
-                    leading: Icon(Icons.edit),
-                    title: Text('Chỉnh sửa'),
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'search',
-                  child: ListTile(
-                    leading: Icon(Icons.search),
-                    title: Text('Tìm kiếm'),
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'trash',
-                  child: ListTile(
-                    leading: Icon(Icons.delete_outline),
-                    title: Text('Thùng rác'),
-                  ),
-                ),
-              ],
-            ),
-          ]
+      case 'search':
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const SearchPage(),
+          ),
+        );
+        break;
+
+      case 'trash':
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const TrashPage(),
+          ),
+        );
+        break;
+    }
+  },
+  itemBuilder: (_) => const [
+    PopupMenuItem(
+      value: 'sort',
+      child: ListTile(
+        leading: Icon(Icons.sort),
+        title: Text('Sắp xếp'),
+      ),
+    ),
+    PopupMenuDivider(),
+    PopupMenuItem(
+      value: 'edit',
+      child: ListTile(
+        leading: Icon(Icons.edit),
+        title: Text('Chỉnh sửa thư mục'),
+      ),
+    ),
+    PopupMenuItem(
+      value: 'search',
+      child: ListTile(
+        leading: Icon(Icons.search),
+        title: Text('Tìm kiếm'),
+      ),
+    ),
+    PopupMenuItem(
+      value: 'trash',
+      child: ListTile(
+        leading: Icon(Icons.delete_outline),
+        title: Text('Thùng rác'),
+      ),
+    ),
+  ],
+),
+
+                    ]
                     // ===== MENU HOME =====
                     : [
                         IconButton(
@@ -247,84 +270,83 @@ class _HomePageState extends State<HomePage> {
                           },
                         ),
                         PopupMenuButton<String>(
-                          icon: const Icon(Icons.more_vert),
-                          onSelected: (value) async {
-                            switch (value) {
-                              case 'search':
-                                final noteId =
-                                    await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        const SearchPage(),
-                                  ),
-                                );
-                                if (noteId != null) {
-                                  widget.onTapNote(noteId);
-                                }
-                                break;
+  icon: const Icon(Icons.more_vert),
+  onSelected: (value) async {
+    switch (value) {
+      case 'sort':
+        _showSortDialog();
+        break;
 
-                              case 'tags':
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        const TagManagementPage(),
-                                  ),
-                                );
-                                break;
+      case 'search':
+        final noteId = await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const SearchPage()),
+        );
+        if (noteId != null) widget.onTapNote(noteId);
+        break;
 
-                              case 'folder':
-                                await showDialog(
-                                  context: context,
-                                  builder: (_) =>
-                                      const CreateFolderDialog(),
-                                );
-                                break;
+      case 'tags':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const TagManagementPage()),
+        );
+        break;
 
-                              case 'trash':
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        const TrashPage(),
-                                  ),
-                                );
-                                break;
-                            }
-                          },
-                          itemBuilder: (_) => const [
-                            PopupMenuItem(
-                              value: 'search',
-                              child: ListTile(
-                                leading: Icon(Icons.search),
-                                title: Text('Tìm kiếm'),
-                              ),
-                            ),
-                            PopupMenuItem(
-                              value: 'tags',
-                              child: ListTile(
-                                leading: Icon(Icons.label),
-                                title: Text('Quản lý nhãn'),
-                              ),
-                            ),
-                            PopupMenuItem(
-                              value: 'folder',
-                              child: ListTile(
-                                leading: Icon(Icons.folder),
-                                title: Text('Thêm thư mục'),
-                              ),
-                            ),
-                            PopupMenuItem(
-                              value: 'trash',
-                              child: ListTile(
-                                leading:
-                                    Icon(Icons.delete_outline),
-                                title: Text('Thùng rác'),
-                              ),
-                            ),
-                          ],
-                        ),
+      case 'folder':
+        await showDialog(
+          context: context,
+          builder: (_) => const CreateFolderDialog(),
+        );
+        break;
+
+      case 'trash':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const TrashPage()),
+        );
+        break;
+    }
+  },
+  itemBuilder: (_) => const [
+    PopupMenuItem(
+      value: 'sort',
+      child: ListTile(
+        leading: Icon(Icons.sort),
+        title: Text('Sắp xếp'),
+      ),
+    ),
+    PopupMenuDivider(),
+    PopupMenuItem(
+      value: 'search',
+      child: ListTile(
+        leading: Icon(Icons.search),
+        title: Text('Tìm kiếm'),
+      ),
+    ),
+    PopupMenuItem(
+      value: 'tags',
+      child: ListTile(
+        leading: Icon(Icons.label),
+        title: Text('Quản lý nhãn'),
+      ),
+    ),
+    PopupMenuItem(
+      value: 'folder',
+      child: ListTile(
+        leading: Icon(Icons.folder),
+        title: Text('Thêm thư mục'),
+      ),
+    ),
+    PopupMenuItem(
+      value: 'trash',
+      child: ListTile(
+        leading: Icon(Icons.delete_outline),
+        title: Text('Thùng rác'),
+      ),
+    ),
+  ],
+),
+
                       ],
           ),
 
@@ -566,4 +588,60 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+
+  List<Note> _sortNotes(List<Note> notes) {
+    final pinned = notes.where((n) => n.isPinned).toList();
+    final normal = notes.where((n) => !n.isPinned).toList();
+
+    int compare(Note a, Note b) {
+      switch (_sortType) {
+        case NoteSortType.titleAsc:
+          return a.title.toLowerCase().compareTo(b.title.toLowerCase());
+        case NoteSortType.titleDesc:
+          return b.title.toLowerCase().compareTo(a.title.toLowerCase());
+        case NoteSortType.createdAsc:
+          return a.createdAt.compareTo(b.createdAt);
+        case NoteSortType.createdDesc:
+          return b.createdAt.compareTo(a.createdAt);
+      }
+    }
+
+    pinned.sort(compare);
+    normal.sort(compare);
+
+    return [...pinned, ...normal];
+  }
+
+  Future<void> _showSortDialog() async {
+    final selected = await showDialog<NoteSortType>(
+      context: context,
+      builder: (_) => SimpleDialog(
+        title: const Text('Sắp xếp ghi chú'),
+        children: [
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, NoteSortType.createdDesc),
+            child: const Text('📅 Ngày tạo (mới → cũ)'),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, NoteSortType.createdAsc),
+            child: const Text('📅 Ngày tạo (cũ → mới)'),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, NoteSortType.titleAsc),
+            child: const Text('🔤 Tên (A → Z)'),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, NoteSortType.titleDesc),
+            child: const Text('🔤 Tên (Z → A)'),
+          ),
+        ],
+      ),
+    );
+
+    if (selected != null) {
+      setState(() => _sortType = selected);
+    }
+  }
+
+
 }
