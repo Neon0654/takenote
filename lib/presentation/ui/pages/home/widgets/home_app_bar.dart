@@ -13,7 +13,6 @@ import '../../trash/trash_page.dart';
 import 'sort_menu.dart';
 import '../../../../../utils/share_utils.dart';
 
-
 class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   const HomeAppBar({Key? key}) : super(key: key);
 
@@ -151,12 +150,43 @@ class _SelectionAppBar extends StatelessWidget {
           onPressed: selection.selectedIds.isEmpty
               ? null
               : () async {
-                  await context.read<NoteCubit>().deleteNotes(
-                    selection.selectedIds,
+                  final ids = Set<int>.from(selection.selectedIds);
+
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (context) {
+                      return AlertDialog(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        title: const Text('Xác nhận'),
+                        content: Text(
+                          'Đưa ${ids.length} ghi chú vào thùng rác?',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('Hủy'),
+                          ),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.redAccent,
+                            ),
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text('Đưa vào thùng rác'),
+                          ),
+                        ],
+                      );
+                    },
                   );
+
+                  if (confirm != true) return;
+
+                  await context.read<NoteCubit>().deleteNotes(ids);
                   context.read<SelectionCubit>().clear();
                 },
         ),
+
         IconButton(
           icon: const Icon(Icons.share),
           onPressed: selection.selectedIds.isEmpty

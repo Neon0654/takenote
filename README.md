@@ -1,91 +1,117 @@
-# notes
+# takenote — Ứng dụng quản lý ghi chú (Notes) 📓
 
-Ghi chú ngắn (Notes) — Ứng dụng Flutter để quản lý ghi chú cá nhân.
+Ứng dụng di động/desktop/ứng dụng web viết bằng Flutter để quản lý ghi chú cá nhân, lưu trữ cục bộ bằng SQLite. Ứng dụng hỗ trợ ghi chú có nhãn (tags), thư mục, đính kèm tệp, nhắc nhở (notifications), tìm kiếm và thao tác hàng loạt.
 
-Ứng dụng này là ví dụ thực tế về một Flutter app sử dụng SQLite (sqflite) để lưu ghi chú cục bộ, kèm một vài chức năng như tạo, sửa, xóa, tìm kiếm và lọc theo thời gian.
+> **Tổng quan nhanh:** Ứng dụng dùng SQLite để lưu dữ liệu, có hệ thống nhãn, thư mục, nhắc nhở địa phương. Xem danh sách tính năng chi tiết tại `FEATURES.md` (có tổng số tính năng đã triển khai).
 
-## Chức năng chính
-- Hiển thị danh sách ghi chú (note list).
-- Thêm ghi chú (Add note).
-- Chỉnh sửa ghi chú (Edit note) với autosave khi chỉnh sửa.
-- Xóa ghi chú (Delete note).
-- Tìm kiếm ghi chú theo từ khóa (Search) và lọc theo khoảng thời gian: Hôm qua, 7 ngày, 30 ngày.
-- Lưu cục bộ bằng SQLite (`sqflite`).
-- Hỗ trợ chạy trên Android, iOS, Web và desktop (Windows/macOS/Linux).
+---
 
-## Cấu trúc mã nguồn (những file quan trọng)
-- `lib/main.dart`: Điểm vào của ứng dụng.
-- `lib/controllers/`: Controllers (logic) để quản lý ghi chú.
-- `lib/presentation/pages/`: Các trang UI như `HomePage`, `EditNotePage`, `SearchPage`.
-- `lib/data/database/notes_database.dart`: Lớp / repository thao tác SQLite.
-- `lib/data/models/note.dart`: Mô hình dữ liệu `Note`.
-- `test/`: Unit & widget tests (bao gồm dùng `sqflite_common_ffi` trên desktop để test DB).
+## 🚀 Chức năng nổi bật
+- Tạo, chỉnh sửa và xóa ghi chú (xóa mềm vào thùng rác).
+- Ghim / bỏ ghim ghi chú (ưu tiên hiển thị).
+- Nhãn (tag): tạo, đổi tên, xóa; gắn/bỏ nhãn cho từng ghi chú hoặc theo nhóm.
+- Thư mục: tạo/đổi tên/xóa thư mục, xem ghi chú theo thư mục, di chuyển ghi chú giữa các thư mục.
+- Đính kèm tệp (File picker) và quản lý tệp kèm theo ghi chú; xóa tệp thực sự khi xóa đính kèm.
+- Nhắc nhở & thông báo cục bộ (lên lịch thông báo theo múi giờ).
+- Tìm kiếm theo từ khóa kết hợp bộ lọc thời gian (Hôm qua, 7 ngày, 30 ngày).
+- Chọn nhiều & thao tác hàng loạt: gắn nhãn, di chuyển, xóa, chia sẻ.
 
-## Cài đặt (Setup)
-1. Cài Flutter SDK theo hướng dẫn chính thức: https://docs.flutter.dev/get-started/install
-2. Mở terminal ở thư mục `notes`:
+---
+
+## 🛠 Cài đặt & chạy ứng dụng
+### Yêu cầu
+- Flutter SDK (khuyến nghị bản stable), Dart
+- Android SDK (để chạy trên Android) / Xcode (macOS để chạy iOS) / Visual Studio (Windows desktop)
+
+### Thiết lập nhanh
+1. Clone repo và cài dependencies:
 
 ```bash
+git clone <repo-url>
+cd takenote
 flutter pub get
+```
+
+2. Chạy kiểm tra tĩnh:
+
+```bash
 flutter analyze
 ```
 
-Gợi ý: nếu bạn dùng Windows hoặc macOS để chạy app desktop, hãy đảm bảo đã cài toolchain tương ứng (Visual Studio cho Windows, Xcode cho macOS).
+3. Chạy ứng dụng:
 
-## Chạy ứng dụng (Run)
-- Chạy trên thiết bị Android/iOS đã kết nối:
+- Android / iOS:
 
 ```bash
 flutter run
 ```
 
-- Chạy trên web (Chrome):
+- Web (Chrome):
 
 ```bash
 flutter run -d chrome
 ```
 
-- Chạy trên Windows (desktop):
+- Desktop (Windows/macOS/Linux):
 
 ```bash
 flutter run -d windows
+# hoặc -d macos, -d linux
 ```
 
-Nếu bạn muốn build release, dùng `flutter build` cho nền tảng tương ứng (ví dụ `flutter build apk`).
+4. Build release (ví dụ Android APK):
 
-## Kiểm thử (Test)
-Ứng dụng có test unit & widget cơ bản; test DB dùng `sqflite_common_ffi` để chạy SQLite trên desktop.
+```bash
+flutter build apk --release
+```
 
-Chạy tất cả test:
+---
+
+## ✅ Test
+- Chạy tất cả test:
 
 ```bash
 flutter test
 ```
 
-Chạy test cụ thể:
-
-```bash
-flutter test test/data/notes_database_test.dart
-flutter test test/pages/home_page_test.dart
-```
-
-## Các tính năng và cách sử dụng (Ngắn gọn)
-- Danh sách: Mở app ⇒ xem danh sách ghi chú, mỗi item hiển thị tiêu đề và 2 dòng nội dung.
-- Thêm: Bấm nút `+` ⇒ màn hình `Thêm ghi chú` ⇒ nhập tiêu đề + nội dung ⇒ khi quay lại (back) app tự lưu ghi chú.
-- Sửa: Chạm vào note ⇒ màn hình `Chỉnh sửa ghi chú` ⇒ khi chỉnh sửa app autosave mỗi 600ms.
-- Xóa: Bấm biểu tượng `delete` trên item để xóa.
-- Tìm kiếm: Bấm icon `search` (ở AppBar) ⇒ nhập từ khóa ⇒ app chạy tìm kiếm real-time và trả về kết quả ⇒ chạm vào result để mở note.
-- Lọc theo thời gian: Trên trang tìm kiếm chọn filter `Hôm qua`, `7 ngày`, `30 ngày`.
-
-## Lưu ý phát triển (Developer notes)
-- Database: file SQLite tên `notes.db` (thực thi bởi `sqflite`).
-- Mã test đã tích hợp `sqflite_common_ffi` để chạy môi trường test trên desktop.
-- Đặt tên, UI và string mặc định bằng tiếng Việt — nếu cần chuyển đổi (i18n), cân nhắc thêm `intl`.
-
-## Đóng góp (Contributing)
-- Pull request: Fork → Tạo branch → Sửa → Tạo pull request.
-- Trước khi PR, chạy `flutter test` và `flutter analyze`.
+- Lưu ý: tests về DB sử dụng `sqflite_common_ffi` để chạy SQLite trong môi trường test.
 
 ---
 
-Tài liệu tham khảo: https://docs.flutter.dev/ (Flutter official docs). 
+## 🗄 Cấu trúc dự án (tổng quan)
+- `lib/main.dart` — khởi tạo app, đăng ký services (ví dụ: notification).
+- `lib/presentation/` — phần UI (pages, widgets) và state management (cubits).
+- `lib/domain/` — entities, interfaces (use cases, repositories).
+- `lib/data/` — datasource, models, repository implementations, database.
+- `lib/services/` — dịch vụ như notification setup.
+- `test/` — unit & widget tests.
+
+---
+
+## 🔧 Ghi chú kỹ thuật & vận hành
+- **Database & migration:** SQLite schema và migration được quản lý trong code (DB version hiện tại trong code). Khi nâng cấp schema, app tự chạy migration.
+- **Notifications:** Sử dụng `flutter_local_notifications` + timezone; app khởi tạo service và yêu cầu quyền khi khởi động.
+- **Attachments:** Tệp đính kèm lưu đường dẫn file; khi xóa đính kèm, tệp trên đĩa cũng bị xóa nếu tồn tại.
+- **Edge cases:** Không lưu ghi chú rỗng; không tạo/đổi tên nhãn rỗng; không đặt nhắc trong quá khứ.
+
+---
+
+## 📣 Cách đóng góp
+- Fork → tạo branch feature/bugfix → commit → tạo Pull Request.
+- Trước PR: chạy `flutter test` và `flutter analyze`.
+- Viết test cho thay đổi quan trọng (unit hoặc widget).
+
+---
+
+## ⚠️ Lưu ý nền tảng & quyền
+- Android: đảm bảo khai báo quyền thông báo (nếu cần) và kiểm tra cài đặt notification channel.
+- iOS: cần cấu hình notification capability và các mô tả quyền trong Info.plist nếu triển khai notification.
+- Desktop: cần toolchain phù hợp (Visual Studio cho Windows, Xcode cho macOS).
+
+---
+
+## 📚 Tham khảo
+- Xem chi tiết tính năng: `FEATURES.md` (bằng tiếng Việt)
+- Flutter docs: https://docs.flutter.dev/
+
+---
