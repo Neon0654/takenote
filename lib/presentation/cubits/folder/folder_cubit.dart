@@ -1,0 +1,57 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../domain/repositories/folder_repository.dart';
+
+// UseCases
+import '../../../domain/usecases/folder/get_folders_usecase.dart';
+import '../../../domain/usecases/folder/create_folder_usecase.dart';
+import '../../../domain/usecases/folder/rename_folder_usecase.dart';
+import '../../../domain/usecases/folder/delete_folder_usecase.dart';
+
+import 'folder_state.dart';
+
+class FolderCubit extends Cubit<FolderState> {
+  final FolderRepository repo;
+
+  // Business logic moved to UseCases
+  final GetFoldersUseCase getFoldersUseCase;
+  final CreateFolderUseCase createFolderUseCase;
+  final RenameFolderUseCase renameFolderUseCase;
+  final DeleteFolderUseCase deleteFolderUseCase;
+
+  FolderCubit(
+    this.repo, {
+    GetFoldersUseCase? getFoldersUseCase,
+    CreateFolderUseCase? createFolderUseCase,
+    RenameFolderUseCase? renameFolderUseCase,
+    DeleteFolderUseCase? deleteFolderUseCase,
+  })  : getFoldersUseCase = getFoldersUseCase ?? GetFoldersUseCase(repo),
+        createFolderUseCase = createFolderUseCase ?? CreateFolderUseCase(repo),
+        renameFolderUseCase = renameFolderUseCase ?? RenameFolderUseCase(repo),
+        deleteFolderUseCase = deleteFolderUseCase ?? DeleteFolderUseCase(repo),
+        super(FolderLoading());
+
+  Future<void> loadFolders() async {
+    try {
+      emit(FolderLoading());
+      final folders = await getFoldersUseCase.call();
+      emit(FolderLoaded(folders, {}));
+    } catch (e) {
+      emit(FolderError(e.toString()));
+    }
+  }
+
+  Future<void> createFolder(String name, int color) async {
+    await createFolderUseCase.call(name: name, color: color);
+    loadFolders();
+  }
+
+  Future<void> renameFolder(int id, String newName) async {
+    await renameFolderUseCase.call(id: id, newName: newName);
+    loadFolders();
+  }
+
+  Future<void> deleteFolder(int id) async {
+    await deleteFolderUseCase.call(id);
+    loadFolders();
+  }
+}

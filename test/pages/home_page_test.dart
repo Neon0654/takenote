@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:notes/presentation/pages/home_page.dart';
-import 'package:notes/data/models/note.dart';
+import 'package:notes/presentation/ui/pages/home_page.dart';
+import 'package:notes/data/models/note_model.dart';
 
 void main() {
   testWidgets('HomePage shows empty text when no notes', (tester) async {

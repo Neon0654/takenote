@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:notes/presentation/pages/edit_note_page.dart';
-import 'package:notes/data/models/note.dart';
+import 'package:notes/presentation/ui/pages/edit_note_page.dart';
+import 'package:notes/data/models/note_model.dart';
 
 void main() {
   testWidgets('EditNotePage shows correct title for add', (tester) async {

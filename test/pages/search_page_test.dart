@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:notes/presentation/pages/search_page.dart';
+import 'package:notes/presentation/ui/pages/search_page.dart';
 
 void main() {
   testWidgets('SearchPage renders search input', (tester) async {
