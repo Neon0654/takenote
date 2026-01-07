@@ -5,7 +5,7 @@ import 'package:notes/domain/entities/tag_entity.dart';
 import '../../../widgets/tag_bar.dart';
 import '../../../widgets/note_grid.dart';
 
-/// Small widget that renders the tag bar + notes grid.
+
 class HomeBody extends StatelessWidget {
   final List<NoteViewModel> notes;
   final List<TagEntity> tags;

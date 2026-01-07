@@ -1,6 +1,6 @@
 import '../../repositories/note_repository.dart';
 
-/// Restores notes from trash. Moved from cubit.
+
 class RestoreNotesUseCase {
   final NoteRepository noteRepo;
 

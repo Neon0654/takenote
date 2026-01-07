@@ -6,7 +6,7 @@ import '../../../../cubits/selection/selection_state.dart';
 import '../../../../cubits/note/note_cubit.dart';
 import '../../../../cubits/note/note_state.dart';
 
-/// AppBar for folder notes page. Keeps UI logic only and dispatches cubit actions.
+
 class FolderAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String folderName;
   final int folderId;

@@ -310,6 +310,22 @@ class NotesDatabase {
     return result.map((e) => NoteModel.fromMap(e)).toList();
   }
 
+  Future<List<NoteModel>> searchNotes(String keyword) async {
+    final db = await database;
+
+    final result = await db.query(
+      'notes',
+      where: '''
+      isDeleted = 0 AND
+      (title LIKE ? OR content LIKE ?)
+    ''',
+      whereArgs: ['%$keyword%', '%$keyword%'],
+      orderBy: 'isPinned DESC, createdAt DESC',
+    );
+
+    return result.map((e) => NoteModel.fromMap(e)).toList();
+  }
+
   // ================= TAG =================
   Future<List<NoteModel>> getNotesByTag(int tagId) async {
     final db = await database;

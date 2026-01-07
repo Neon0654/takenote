@@ -1,6 +1,6 @@
 import '../../repositories/note_repository.dart';
 
-/// Moves multiple notes to a folder. Moved from cubit.
+
 class MoveNotesToFolderUseCase {
   final NoteRepository noteRepo;
 

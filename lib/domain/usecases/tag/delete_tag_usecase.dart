@@ -1,6 +1,6 @@
 import '../../repositories/tag_repository.dart';
 
-/// Deletes a tag via repository.
+
 class DeleteTagUseCase {
   final TagRepository repo;
 

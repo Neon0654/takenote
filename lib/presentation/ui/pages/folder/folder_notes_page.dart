@@ -75,7 +75,7 @@ class _FolderNotesPageState extends State<FolderNotesPage> {
     );
   }
 
-  // ... inside _FolderNotesPageState
+  
   void _showAddNoteOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,

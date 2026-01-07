@@ -14,7 +14,7 @@ abstract class NoteLocalDataSource {
 
   Future<List<NoteModel>> searchNotesWithRange(
     String keyword,
-    DateTime fromDate,
+    DateTime? fromDate,
   );
 
   Future<List<NoteModel>> getNotesWithoutFolder();

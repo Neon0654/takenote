@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../cubits/note/note_cubit.dart';
 
-/// Small, dumb Sort menu that calls `NoteCubit.setSort`.
+
 class SortMenu extends StatelessWidget {
   const SortMenu({Key? key}) : super(key: key);
 

@@ -18,7 +18,7 @@ class _TrashPageState extends State<TrashPage> {
   @override
   void initState() {
     super.initState();
-    // Load trash notes once when entering this page.
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<NoteCubit>().showTrash();
     });
@@ -30,7 +30,7 @@ class _TrashPageState extends State<TrashPage> {
       canPop: true,
       onPopInvoked: (didPop) {
         if (didPop) {
-          context.read<NoteCubit>().showAll(); // ✅ context còn sống
+          context.read<NoteCubit>().showAll(); 
         }
       },
       child: BlocProvider(

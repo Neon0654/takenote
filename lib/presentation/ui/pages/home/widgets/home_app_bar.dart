@@ -11,8 +11,9 @@ import '../../tag/tag_manage_page.dart';
 import '../../search/search_page.dart';
 import '../../trash/trash_page.dart';
 import 'sort_menu.dart';
+import '../../../../../utils/share_utils.dart';
 
-/// App bar that switches between normal and selection mode.
+
 class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   const HomeAppBar({Key? key}) : super(key: key);
 
@@ -154,6 +155,22 @@ class _SelectionAppBar extends StatelessWidget {
                     selection.selectedIds,
                   );
                   context.read<SelectionCubit>().clear();
+                },
+        ),
+        IconButton(
+          icon: const Icon(Icons.share),
+          onPressed: selection.selectedIds.isEmpty
+              ? null
+              : () {
+                  final state = context.read<NoteCubit>().state;
+                  if (state is NoteLoaded) {
+                    final selectedNotes = state.notes
+                        .where((e) => selection.selectedIds.contains(e.note.id))
+                        .map((e) => e.note)
+                        .toList();
+
+                    ShareUtils.shareMultipleNotes(selectedNotes);
+                  }
                 },
         ),
       ],

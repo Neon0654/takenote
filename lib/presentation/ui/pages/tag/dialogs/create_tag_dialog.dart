@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../cubits/tag/tag_cubit.dart';
 
-/// Dialog to create a tag. UI-only: reads user input and calls cubit methods.
+
 class CreateTagDialog extends StatefulWidget {
   const CreateTagDialog({Key? key}) : super(key: key);
 

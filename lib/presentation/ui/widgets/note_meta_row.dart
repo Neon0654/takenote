@@ -27,17 +27,17 @@ class NoteMetaRow extends StatelessWidget {
       runSpacing: 6,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        // TAG
+        
         _buildTagPart(),
 
-        // REMINDER
+        
         if (hasReminder)
           InkWell(
             onTap: onTapReminder,
             child: const Icon(Icons.alarm, size: 18),
           ),
 
-        // ATTACHMENT
+        
         if (attachmentCount > 0)
           InkWell(
             onTap: onTapAttachment,
@@ -55,7 +55,7 @@ class NoteMetaRow extends StatelessWidget {
   }
 
   Widget _buildTagPart() {
-    // 0 tag
+    
     if (tags.isEmpty) {
       return InkWell(
         onTap: onShowAllTags,
@@ -66,12 +66,12 @@ class NoteMetaRow extends StatelessWidget {
       );
     }
 
-    // 1 tag
+    
     if (tags.length == 1) {
       return _tagChip(tags.first.name);
     }
 
-    // >=2 tag
+    
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

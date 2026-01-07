@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../cubits/folder/folder_cubit.dart';
 
-/// Confirmation dialog for deleting a folder. UI-only.
+
 class DeleteFolderConfirmDialog extends StatelessWidget {
   final int folderId;
   final String folderName;

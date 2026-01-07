@@ -1,6 +1,6 @@
 import '../../repositories/tag_repository.dart';
 
-/// Associates a tag with a note via repository.
+
 class AddTagToNoteUseCase {
   final TagRepository repo;
 

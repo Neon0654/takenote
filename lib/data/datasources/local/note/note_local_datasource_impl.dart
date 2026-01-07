@@ -50,8 +50,11 @@ class NoteLocalDataSourceImpl implements NoteLocalDataSource {
   @override
   Future<List<NoteModel>> searchNotesWithRange(
     String keyword,
-    DateTime fromDate,
+    DateTime? fromDate,
   ) {
+    if (fromDate == null) {
+    return db.searchNotes(keyword);
+  }
     return db.searchNotesWithRange(keyword, fromDate);
   }
 

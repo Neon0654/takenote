@@ -15,7 +15,7 @@ class SelectionCubit extends Cubit<SelectionState> {
 
     emit(
       SelectionState(
-        selecting: ids.isNotEmpty, //chú ý nhớ kiểm tra để xóa
+        selecting: ids.isNotEmpty, 
         selectedIds: ids,
       ),
     );

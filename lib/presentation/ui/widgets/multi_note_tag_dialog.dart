@@ -26,7 +26,7 @@ class _MultiNoteTagDialogState extends State<MultiNoteTagDialog> {
   }
 
   Future<void> _loadExistingTags() async {
-    // Lấy 1 note đại diện (vì dialog này là UI)
+    
     final noteId = widget.noteIds.first;
 
     final tagRepo = context.read<TagRepository>();

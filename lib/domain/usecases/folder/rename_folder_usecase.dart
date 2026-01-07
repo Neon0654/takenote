@@ -1,6 +1,5 @@
 import '../../repositories/folder_repository.dart';
 
-/// Renames a folder if new name is non-empty (preserves previous validation behavior).
 class RenameFolderUseCase {
   final FolderRepository repo;
 

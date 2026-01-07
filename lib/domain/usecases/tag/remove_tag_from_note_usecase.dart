@@ -1,6 +1,6 @@
 import '../../repositories/tag_repository.dart';
 
-/// Removes a tag from a note.
+
 class RemoveTagFromNoteUseCase {
   final TagRepository repo;
 

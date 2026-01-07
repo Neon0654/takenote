@@ -1,6 +1,5 @@
 import '../../repositories/folder_repository.dart';
 
-/// Deletes a folder via repository.
 class DeleteFolderUseCase {
   final FolderRepository repo;
 

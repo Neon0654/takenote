@@ -1,6 +1,6 @@
 import '../../repositories/note_repository.dart';
 
-/// Permanently deletes notes. Moved from cubit.
+
 class DeleteForeverUseCase {
   final NoteRepository noteRepo;
 

@@ -15,10 +15,10 @@ class NotePage extends StatefulWidget {
   final NoteEntity? note;
   final int? folderId;
 
-  // NOTE: Do NOT pass a cubit via constructor. The page should use the
-  // NoteCubit instance provided in the build context (via BlocProvider).
-  // This ensures a single source of truth and that BlocBuilder listens
-  // to the same cubit instance actions call.
+  
+  
+  
+  
   const NotePage({super.key, this.note, this.folderId});
 
   @override
@@ -32,17 +32,17 @@ class _NotePageState extends State<NotePage> {
   bool get isEdit => widget.note != null;
   bool _showMetaDetail = false;
 
-  // Controllers initialization guard: we only initialize controllers from
-  // the NoteViewModel once (when the VM becomes available). This prevents
-  // overwriting user edits when the cubit reloads notes.
+  
+  
+  
   bool _controllersInitedFromVm = false;
 
   @override
   void initState() {
     super.initState();
-    // Do NOT initialize controllers from widget.note (NoteEntity). The UI
-    // should render from NoteViewModel. Controllers will be seeded from the
-    // VM once it becomes available in the BlocBuilder.
+    
+    
+    
     _titleController = TextEditingController();
     _contentController = TextEditingController();
   }
@@ -57,8 +57,8 @@ class _NotePageState extends State<NotePage> {
   void _initControllersFromVm(NoteViewModel vm) {
     if (_controllersInitedFromVm) return;
 
-    // Seed controllers from the VM values. Do this once to avoid
-    // overwriting user's edits when events cause a rebuild.
+    
+    
     _titleController.text = vm.note.title;
     _contentController.text = vm.note.content;
     _controllersInitedFromVm = true;
@@ -74,7 +74,7 @@ class _NotePageState extends State<NotePage> {
     final state = cubit.state;
 
     if (isEdit && widget.note?.id != null) {
-      // Use the latest NoteEntity from the loaded NoteViewModel when possible.
+      
       NoteEntity current = widget.note!;
 
       if (state is NoteLoaded) {
@@ -111,10 +111,10 @@ class _NotePageState extends State<NotePage> {
     await context.read<NoteCubit>().loadNotes();
   }
 
-  // ================= REMINDER =================
-  // Note: accept noteId so we always operate on the current VM note id
-  // and do NOT call setState() after mutating data - the cubit reloads and
-  // emits new state which the BlocBuilder will pick up.
+  
+  
+  
+  
   Future<void> _openReminderDialog(int noteId) async {
     final date = await showDatePicker(
       context: context,
@@ -146,7 +146,7 @@ class _NotePageState extends State<NotePage> {
     );
   }
 
-  // ================= ATTACHMENT =================
+  
   Future<void> _pickAttachment(int noteId) async {
     final result = await FilePicker.platform.pickFiles();
     if (result == null) return;
@@ -172,12 +172,12 @@ class _NotePageState extends State<NotePage> {
         appBar: NoteAppBar(isEdit: isEdit),
 
         body: BlocBuilder<NoteCubit, NoteState>(
-          // Ensure this builder listens to the same cubit instance that
-          // actions call via context.read<NoteCubit>().
+          
+          
           bloc: context.read<NoteCubit>(),
           builder: (context, state) {
-            // If this is a new note (no id), render a temporary empty VM so
-            // the user can type a new note.
+            
+            
             if (widget.note == null) {
               final vm = NoteViewModel(
                 note: NoteEntity(
@@ -204,7 +204,7 @@ class _NotePageState extends State<NotePage> {
               );
             }
 
-            // For editing (existing) note, wait for the cubit to load notes.
+            
             if (state is! NoteLoaded) {
               return const SizedBox();
             }

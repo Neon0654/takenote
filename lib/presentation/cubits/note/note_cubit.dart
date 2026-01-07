@@ -8,7 +8,7 @@ import '../../../domain/repositories/attachment_repository.dart';
 import '../../../domain/repositories/reminder_repository.dart';
 import '../../../domain/entities/attachment_entity.dart';
 
-// UseCases
+
 import '../../../domain/usecases/note/load_notes_usecase.dart';
 import '../../../domain/usecases/note/add_note_usecase.dart';
 import '../../../domain/usecases/note/update_note_usecase.dart';
@@ -32,7 +32,7 @@ class NoteCubit extends Cubit<NoteState> {
   final AttachmentRepository attachmentRepo;
   final ReminderRepository reminderRepo;
 
-  // Use cases (business logic moved out of cubit)
+  
   final LoadNotesUseCase loadNotesUseCase;
   final AddNoteUseCase addNoteUseCase;
   final UpdateNoteUseCase updateNoteUseCase;
@@ -48,7 +48,7 @@ class NoteCubit extends Cubit<NoteState> {
   int? _selectedTagId;
   NoteViewMode _mode = NoteViewMode.all;
 
-  // 🎛️ sorting state owned by cubit
+  
   NoteSortField _sortField = NoteSortField.createdAt;
   SortOrder _sortOrder = SortOrder.desc;
 
@@ -87,12 +87,12 @@ class NoteCubit extends Cubit<NoteState> {
            moveNotesToFolderUseCase ?? MoveNotesToFolderUseCase(noteRepo),
        super(NoteInitial());
 
-  // ================= LOAD =================
+  
   Future<void> loadNotes() async {
     try {
       emit(NoteLoading());
 
-      // Delegate fetching and VM building to use case
+      
       final result = await loadNotesUseCase.call(
         folderId: _folderId,
         selectedTagId: _selectedTagId,
@@ -103,7 +103,7 @@ class NoteCubit extends Cubit<NoteState> {
       _cachedTags = result.tags;
       final noteViewModels = result.notes;
 
-      // Apply sorting after fetching and building view models (presentation concern)
+      
       _applySort(noteViewModels);
 
       emit(
@@ -119,7 +119,7 @@ class NoteCubit extends Cubit<NoteState> {
     }
   }
 
-  // ================= FILTER =================
+  
   void selectTag(int? tagId) {
     _mode = NoteViewMode.all;
     _selectedTagId = tagId;
@@ -148,7 +148,7 @@ class NoteCubit extends Cubit<NoteState> {
     loadNotes();
   }
 
-  /// Show deleted notes (trash)
+  
   void showTrash() {
     _mode = NoteViewMode.trash;
     _folderId = null;
@@ -156,7 +156,7 @@ class NoteCubit extends Cubit<NoteState> {
     loadNotes();
   }
 
-  // ================= CRUD =================
+  
   Future<void> addNote(String title, String content, {int? folderId}) async {
     await addNoteUseCase.call(
       title: title,
@@ -187,13 +187,13 @@ class NoteCubit extends Cubit<NoteState> {
     loadNotes();
   }
 
-  /// Restore notes from trash (soft restore)
+  
   Future<void> restoreNotes(Set<int> noteIds) async {
     await restoreNotesUseCase.call(noteIds);
     loadNotes();
   }
 
-  /// Permanently delete notes
+  
   Future<void> deleteForever(Set<int> noteIds) async {
     await deleteForeverUseCase.call(noteIds);
     loadNotes();
@@ -207,7 +207,7 @@ class NoteCubit extends Cubit<NoteState> {
     loadNotes();
   }
 
-  // ================= SORT =================
+  
   void setSort(NoteSortField field, SortOrder order) {
     _sortField = field;
     _sortOrder = order;
@@ -216,7 +216,7 @@ class NoteCubit extends Cubit<NoteState> {
 
   void _applySort(List<NoteViewModel> list) {
     list.sort((a, b) {
-      // keep pinned notes on top
+      
       if (a.note.isPinned != b.note.isPinned) {
         return b.note.isPinned ? 1 : -1;
       }
@@ -241,20 +241,20 @@ class NoteCubit extends Cubit<NoteState> {
     });
   }
 
-  // ================= REMINDER =================
+  
   Future<void> addReminderToNote({
     required int noteId,
     required DateTime remindAt,
   }) async {
     await addReminderUseCase.call(noteId: noteId, remindAt: remindAt);
 
-    // refresh UI
+    
     await loadNotes();
   }
 
   Future<void> markReminderDone(int reminderId) async {
     await markReminderDoneUseCase.call(reminderId);
-    await loadNotes(); // 🔥 refresh lại meta
+    await loadNotes(); 
   }
 
   Future<void> deleteReminder(int reminderId) async {
@@ -262,7 +262,7 @@ class NoteCubit extends Cubit<NoteState> {
     await loadNotes();
   }
 
-  // ================= ATTACHMENT =================
+  
   Future<void> addAttachmentToNote({
     required int noteId,
     required String filePath,
@@ -288,6 +288,6 @@ class NoteCubit extends Cubit<NoteState> {
 enum NoteViewMode {
   all,
   folder,
-  unassigned, // 👈 chưa có folder
-  trash, // 👈 show deleted notes (thùng rác)
+  unassigned, 
+  trash, 
 }

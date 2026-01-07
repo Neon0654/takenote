@@ -5,7 +5,7 @@ class NoteModel {
   final String title;
   final String content;
   final DateTime createdAt;
-  final DateTime updatedAt; // 🔧 new field persisted in DB
+  final DateTime updatedAt; 
   final bool isPinned;
   final bool isDeleted;
   final int? folderId;
@@ -36,7 +36,7 @@ class NoteModel {
     final created = DateTime.parse(map['createdAt']);
     final updated = map['updatedAt'] != null
         ? DateTime.parse(map['updatedAt'])
-        : created; // fallback
+        : created; 
 
     return NoteModel(
       id: map['id'],

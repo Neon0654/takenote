@@ -1,6 +1,6 @@
 import '../../repositories/tag_repository.dart';
 
-/// Renames a tag if new name is non-empty.
+
 class RenameTagUseCase {
   final TagRepository repo;
 

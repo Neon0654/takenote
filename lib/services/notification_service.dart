@@ -16,7 +16,6 @@ class NotificationService {
     );
   }
 
-  // 🔥 ANDROID 13+ – XIN QUYỀN
   static Future<void> requestPermission() async {
   await _plugin
       .resolvePlatformSpecificImplementation<

@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../cubits/tag/tag_cubit.dart';
 import '../../../../cubits/note/note_cubit.dart';
 
-/// Confirmation dialog for deleting a tag. UI-only.
+
 class DeleteTagConfirmDialog extends StatelessWidget {
   final int tagId;
 

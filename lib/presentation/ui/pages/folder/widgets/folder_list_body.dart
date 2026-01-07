@@ -7,7 +7,7 @@ import '../../../../cubits/folder/folder_state.dart';
 import '../../../../../domain/entities/folder_entity.dart';
 import '../../folder/folder_notes_page.dart';
 
-// Dialogs
+
 import '../dialogs/rename_folder_dialog.dart';
 import '../dialogs/delete_folder_confirm_dialog.dart';
 

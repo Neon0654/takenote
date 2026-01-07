@@ -23,7 +23,7 @@ class TrashBody extends StatelessWidget {
         if (state is NoteLoaded) {
           return NoteGrid(
             notes: state.notes,
-            onOpenNote: (_) {}, // Do not allow opening notes from trash
+            onOpenNote: (_) {}, 
           );
         }
 
