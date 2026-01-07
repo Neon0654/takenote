@@ -22,31 +22,36 @@ class HomePage extends StatelessWidget {
       create: (_) => SelectionCubit(),
       child: Scaffold(
         appBar: const HomeAppBar(),
-
         body: BlocBuilder<TagCubit, TagState>(
-          buildWhen: (prev, curr) => curr is TagLoaded,
+          buildWhen: (prev, curr) =>
+              curr is TagLoaded || curr is TagError || curr is TagLoading,
           builder: (context, tagState) {
             return BlocBuilder<NoteCubit, NoteState>(
               builder: (context, noteState) {
-                // ===== LOADING =====
-                if (tagState is TagInitial ||
-                    tagState is TagLoading ||
-                    noteState is NoteInitial ||
-                    noteState is NoteLoading) {
-                  return const Center(child: CircularProgressIndicator());
+                if (tagState is TagLoading || noteState is NoteLoading) {
+                  return const Center(
+                    child: CircularProgressIndicator.adaptive(),
+                  );
                 }
 
-                // ===== ERROR =====
-                if (tagState is TagError) {
-                  return Center(child: Text(tagState.message));
+                if (tagState is TagError || noteState is NoteError) {
+                  final msg = tagState is TagError
+                      ? tagState.message
+                      : (noteState as NoteError).message;
+                  return _buildCenteredInfo(
+                    Icons.error_outline,
+                    msg,
+                    color: Colors.red,
+                  );
                 }
 
-                if (noteState is NoteError) {
-                  return Center(child: Text(noteState.message));
-                }
-
-                // ===== LOADED =====
                 if (tagState is TagLoaded && noteState is NoteLoaded) {
+                  if (noteState.notes.isEmpty) {
+                    return _buildCenteredInfo(
+                      Icons.note_alt_outlined,
+                      'Chưa có ghi chú nào',
+                    );
+                  }
                   return HomeBody(
                     notes: noteState.notes,
                     tags: tagState.tags,
@@ -59,30 +64,42 @@ class HomePage extends StatelessWidget {
                           builder: (_) => NotePage(note: noteVM.note),
                         ),
                       );
-
                       context.read<NoteCubit>().loadNotes();
                     },
                   );
                 }
-
-                return const SizedBox();
+                return const SizedBox.shrink();
               },
             );
           },
         ),
-
-        floatingActionButton: FloatingActionButton(
+        floatingActionButton: FloatingActionButton.extended(
           onPressed: () async {
             await Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const NotePage()),
             );
-
             context.read<NoteCubit>().loadNotes();
           },
-
-          child: const Icon(Icons.add),
+          label: const Text('Ghi chú'),
+          icon: const Icon(Icons.add),
         ),
+      ),
+    );
+  }
+
+  Widget _buildCenteredInfo(IconData icon, String text, {Color? color}) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 48, color: color ?? Colors.grey),
+          const SizedBox(height: 16),
+          Text(
+            text,
+            style: TextStyle(color: color ?? Colors.grey[600], fontSize: 16),
+          ),
+        ],
       ),
     );
   }

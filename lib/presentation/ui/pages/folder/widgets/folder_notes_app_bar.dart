@@ -11,7 +11,11 @@ class FolderAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String folderName;
   final int folderId;
 
-  const FolderAppBar({Key? key, required this.folderName, required this.folderId}) : super(key: key);
+  const FolderAppBar({
+    Key? key,
+    required this.folderName,
+    required this.folderId,
+  }) : super(key: key);
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -21,64 +25,71 @@ class FolderAppBar extends StatelessWidget implements PreferredSizeWidget {
     return BlocBuilder<SelectionCubit, SelectionState>(
       builder: (context, selection) {
         if (!selection.selecting) {
-          return AppBar(title: Text(folderName));
+          return AppBar(
+            elevation: 0,
+            title: Text(
+              folderName,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          );
         }
 
-        final selectedCount = selection.selectedIds.length;
-
         return AppBar(
+          backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
           leading: IconButton(
-            icon: const Icon(Icons.close),
+            icon: const Icon(Icons.close_rounded),
             onPressed: () => context.read<SelectionCubit>().clear(),
           ),
-          title: Text('$selectedCount đã chọn'),
+          title: Text('${selection.selectedIds.length} đã chọn'),
           actions: [
             IconButton(
-              icon: const Icon(Icons.select_all),
+              icon: const Icon(Icons.select_all_rounded),
               onPressed: () {
                 final state = context.read<NoteCubit>().state;
-                if (state is! NoteLoaded) return;
-
-                context.read<SelectionCubit>().selectAll(
-                  state.notes.map((e) => e.note.id!).toList(),
-                );
+                if (state is NoteLoaded) {
+                  context.read<SelectionCubit>().selectAll(
+                    state.notes.map((e) => e.note.id!).toList(),
+                  );
+                }
               },
             ),
             PopupMenuButton<_NoteAction>(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               onSelected: (value) async {
                 final ids = context.read<SelectionCubit>().state.selectedIds;
                 final noteCubit = context.read<NoteCubit>();
-
-                switch (value) {
-                  case _NoteAction.moveOut:
-                    await noteCubit.moveNotesToFolder(
-                      noteIds: ids,
-                      folderId: null,
-                    );
-                    noteCubit.showFolder(folderId);
-                    break;
-
-                  case _NoteAction.delete:
-                    await noteCubit.deleteNotes(ids);
-                    noteCubit.showFolder(folderId);
-                    break;
+                if (value == _NoteAction.moveOut) {
+                  await noteCubit.moveNotesToFolder(
+                    noteIds: ids,
+                    folderId: null,
+                  );
+                } else {
+                  await noteCubit.deleteNotes(ids);
                 }
-
+                noteCubit.showFolder(folderId);
                 context.read<SelectionCubit>().clear();
               },
               itemBuilder: (_) => const [
                 PopupMenuItem(
                   value: _NoteAction.moveOut,
-                  child: ListTile(
-                    leading: Icon(Icons.drive_file_move),
-                    title: Text('Chuyển ra ngoài'),
+                  child: Row(
+                    children: [
+                      Icon(Icons.outbox_rounded),
+                      SizedBox(width: 12),
+                      Text('Chuyển ra ngoài'),
+                    ],
                   ),
                 ),
                 PopupMenuItem(
                   value: _NoteAction.delete,
-                  child: ListTile(
-                    leading: Icon(Icons.delete, color: Colors.red),
-                    title: Text('Xóa'),
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete_outline, color: Colors.red),
+                      SizedBox(width: 12),
+                      Text('Xóa', style: TextStyle(color: Colors.red)),
+                    ],
                   ),
                 ),
               ],

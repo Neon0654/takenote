@@ -3,17 +3,15 @@ import 'package:notes/data/viewmodel/note_view_model.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:notes/presentation/cubits/note/note_cubit.dart';
 
-/// Note editor content separated into a dumb widget.
-/// Receives controllers and callbacks from the parent stateful page.
 class NoteBody extends StatelessWidget {
   final NoteViewModel vm;
   final TextEditingController titleController;
   final TextEditingController contentController;
   final bool showMetaDetail;
   final VoidCallback toggleMetaDetail;
-  final ValueChanged<int> onAddTag; // noteId
-  final ValueChanged<int> onPickAttachment; // noteId
-  final ValueChanged<int> onAddReminder; // noteId
+  final ValueChanged<int> onAddTag;
+  final ValueChanged<int> onPickAttachment;
+  final ValueChanged<int> onAddReminder;
 
   const NoteBody({
     Key? key,
@@ -30,60 +28,78 @@ class NoteBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final note = vm.note;
+    final theme = Theme.of(context);
 
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          TextField(
-            controller: titleController,
-            decoration: const InputDecoration(
-              hintText: 'Tiêu đề',
-              border: InputBorder.none,
-            ),
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-          ),
-
-          if (note.tags.isNotEmpty)
-            Wrap(
-              spacing: 6,
-              children: note.tags.map((t) => Chip(label: Text('#${t.name}'))).toList(),
-            ),
-
-          const Divider(),
-
-          _MetaActions(
-            noteId: note.id,
-            showMetaDetail: showMetaDetail,
-            onAddTag: onAddTag,
-            onPickAttachment: onPickAttachment,
-            onAddReminder: onAddReminder,
-            toggleMetaDetail: toggleMetaDetail,
-          ),
-
-          AnimatedCrossFade(
-            firstChild: const SizedBox.shrink(),
-            secondChild: _MetaDetail(vm: vm),
-            crossFadeState: showMetaDetail ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-            duration: const Duration(milliseconds: 200),
-          ),
-
-          const Divider(),
-
-          Expanded(
-            child: TextField(
-              controller: contentController,
-              maxLines: null,
-              expands: true,
-              decoration: const InputDecoration(
-                hintText: 'Nội dung ghi chú...',
-                border: InputBorder.none,
+    return Column(
+      children: [
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            children: [
+              // --- TITLE SECTION ---
+              TextField(
+                controller: titleController,
+                decoration: InputDecoration(
+                  hintText: 'Tiêu đề',
+                  hintStyle: theme.textTheme.headlineSmall?.copyWith(
+                    color: theme.colorScheme.outlineVariant,
+                  ),
+                  border: InputBorder.none,
+                  isDense: true,
+                ),
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
+              const SizedBox(height: 12),
+
+              // --- META SECTION (Grouped in a Card) ---
+              Container(
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  children: [
+                    _MetaActions(
+                      noteId: note.id,
+                      showMetaDetail: showMetaDetail,
+                      onAddTag: onAddTag,
+                      onPickAttachment: onPickAttachment,
+                      onAddReminder: onAddReminder,
+                      toggleMetaDetail: toggleMetaDetail,
+                    ),
+                    AnimatedSize(
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeInOut,
+                      child: showMetaDetail
+                          ? Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                              child: _MetaDetail(vm: vm),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // --- CONTENT EDITOR ---
+              TextField(
+                controller: contentController,
+                maxLines: null,
+                minLines: 10,
+                decoration: InputDecoration(
+                  hintText: 'Nội dung ghi chú...',
+                  hintStyle: TextStyle(color: theme.colorScheme.outlineVariant),
+                  border: InputBorder.none,
+                ),
+                style: theme.textTheme.bodyLarge?.copyWith(height: 1.5),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -108,27 +124,65 @@ class _MetaActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 16,
-      runSpacing: 8,
-      children: [
-        _metaButton(Icons.label_outline, 'Thêm tag', () {
-          if (noteId == null) return;
-          onAddTag(noteId!);
-        }),
-        _metaButton(Icons.attach_file, 'Đính kèm', () {
-          if (noteId == null) return;
-          onPickAttachment(noteId!);
-        }),
-        _metaButton(Icons.alarm, 'Nhắc nhở', () {
-          if (noteId == null) return;
-          onAddReminder(noteId!);
-        }),
-        IconButton(
-          icon: Icon(showMetaDetail ? Icons.expand_less : Icons.expand_more),
-          onPressed: toggleMetaDetail,
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Row(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _metaButton(context, Icons.label_outline, 'Tag', () {
+                    if (noteId != null) onAddTag(noteId!);
+                  }),
+                  _metaButton(context, Icons.attach_file, 'Đính kèm', () {
+                    if (noteId != null) onPickAttachment(noteId!);
+                  }),
+                  _metaButton(context, Icons.alarm, 'Nhắc nhở', () {
+                    if (noteId != null) onAddReminder(noteId!);
+                  }),
+                ],
+              ),
+            ),
+          ),
+          VerticalDivider(
+            indent: 8,
+            endIndent: 8,
+            color: theme.colorScheme.outlineVariant,
+          ),
+          IconButton.filledTonal(
+            onPressed: toggleMetaDetail,
+            icon: Icon(
+              showMetaDetail ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _metaButton(
+    BuildContext context,
+    IconData icon,
+    String label,
+    VoidCallback onTap,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: FilledButton.tonalIcon(
+        onPressed: noteId == null ? null : onTap,
+        icon: Icon(icon, size: 18),
+        label: Text(label),
+        style: FilledButton.styleFrom(
+          visualDensity: VisualDensity.compact,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
         ),
-      ],
+      ),
     );
   }
 }
@@ -140,50 +194,74 @@ class _MetaDetail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final note = vm.note;
+    final theme = Theme.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // TAGS
         if (note.tags.isNotEmpty) ...[
-          const Text('Tag', style: TextStyle(fontWeight: FontWeight.w600)),
+          Text(
+            'Nhãn đã thêm',
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
           Wrap(
             spacing: 6,
-            children: note.tags.map((t) => Chip(label: Text('#${t.name}'))).toList(),
+            runSpacing: 0,
+            children: note.tags
+                .map((t) => Chip(
+                      label: Text('#${t.name}'),
+                      visualDensity: VisualDensity.compact,
+                      backgroundColor: theme.colorScheme.surface,
+                      side: BorderSide.none,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ))
+                .toList(),
+          ),
+          const SizedBox(height: 12),
+        ],
+        if (vm.reminders.isNotEmpty) ...[
+          Text(
+            'Nhắc nhở',
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          ...vm.reminders.map(
+            (r) => Container(
+              margin: const EdgeInsets.only(top: 4),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: ListTile(
+                dense: true,
+                visualDensity: VisualDensity.compact,
+                leading: Icon(Icons.alarm,
+                    size: 18, color: theme.colorScheme.secondary),
+                title: Text(
+                  '${r.remindAt.day}/${r.remindAt.month}/${r.remindAt.year} '
+                  '${r.remindAt.hour}:${r.remindAt.minute.toString().padLeft(2, '0')}',
+                  style: theme.textTheme.bodyMedium,
+                ),
+                trailing: IconButton(
+                  icon: const Icon(Icons.remove_circle_outline, size: 18),
+                  color: theme.colorScheme.error,
+                  onPressed: () {
+                    context.read<NoteCubit>().deleteReminder(r.id!);
+                  },
+                ),
+              ),
+            ),
           ),
         ],
-
-        // REMINDERS
-        ...vm.reminders.map(
-          (r) => ListTile(
-            dense: true,
-            leading: const Icon(Icons.alarm),
-            title: Text(
-              '${r.remindAt.day}/${r.remindAt.month}/${r.remindAt.year} '
-              '${r.remindAt.hour}:${r.remindAt.minute.toString().padLeft(2, '0')}',
-            ),
-            trailing: IconButton(
-              icon: const Icon(Icons.close, size: 18),
-              tooltip: 'Xoá nhắc nhở',
-              onPressed: () {
-                context.read<NoteCubit>().deleteReminder(r.id!);
-              },
-            ),
-          ),
-        ),
       ],
     );
   }
-}
-
-Widget _metaButton(IconData icon, String label, VoidCallback onTap) {
-  return Padding(
-    padding: const EdgeInsets.only(right: 16),
-    child: InkWell(
-      onTap: onTap,
-      child: Row(
-        children: [Icon(icon, size: 20), const SizedBox(width: 4), Text(label)],
-      ),
-    ),
-  );
 }

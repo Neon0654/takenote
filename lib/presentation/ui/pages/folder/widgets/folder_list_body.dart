@@ -19,29 +19,38 @@ class FolderListBody extends StatelessWidget {
     return BlocBuilder<FolderCubit, FolderState>(
       builder: (context, state) {
         if (state is FolderLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator.adaptive());
         }
 
         if (state is FolderError) {
-          return Center(child: Text(state.message));
+          return Center(child: Text(state.message, style: const TextStyle(color: Colors.red)));
         }
 
         if (state is FolderLoaded) {
           if (state.folders.isEmpty) {
-            return const Center(child: Text('Chưa có thư mục'));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Icon(Icons.folder_open_outlined, size: 64, color: Colors.grey[400]),
+                  const SizedBox(height: 16),
+                  Text('Chưa có thư mục', style: TextStyle(color: Colors.grey[600], fontSize: 16)),
+                ],
+              ),
+            );
           }
 
-          return ListView.builder(
+          return ListView.separated(
+            padding: const EdgeInsets.all(12),
             itemCount: state.folders.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 8),
             itemBuilder: (_, index) {
               final folder = state.folders[index];
               final count = state.noteCount[folder.id] ?? 0;
-
               return _FolderTile(folder: folder, count: count);
             },
           );
         }
-
         return const SizedBox();
       },
     );
@@ -56,59 +65,49 @@ class _FolderTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(Icons.folder, color: Color(folder.colorValue)),
-      title: Text(folder.name),
-      subtitle: Text('$count ghi chú'),
-
-      trailing: PopupMenuButton<_FolderMenu>(
-        onSelected: (value) {
-          switch (value) {
-            case _FolderMenu.rename:
-              _showRenameDialog(context);
-              break;
-            case _FolderMenu.delete:
-              _confirmDelete(context);
-              break;
-          }
-        },
-        itemBuilder: (_) => const [
-          PopupMenuItem(
-            value: _FolderMenu.rename,
-            child: ListTile(leading: Icon(Icons.edit), title: Text('Đổi tên')),
-          ),
-          PopupMenuItem(
-            value: _FolderMenu.delete,
-            child: ListTile(
-              leading: Icon(Icons.delete, color: Colors.red),
-              title: Text('Xóa'),
-            ),
-          ),
-        ],
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.withOpacity(0.2)),
       ),
-
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => FolderNotesPage(folder: folder)),
-        );
-      },
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Color(folder.colorValue).withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(Icons.folder_rounded, color: Color(folder.colorValue)),
+        ),
+        title: Text(folder.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text('$count ghi chú', style: TextStyle(color: Colors.grey[600])),
+        trailing: PopupMenuButton<_FolderMenu>(
+          icon: const Icon(Icons.more_vert_rounded),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          onSelected: (value) {
+            if (value == _FolderMenu.rename) _showRenameDialog(context);
+            if (value == _FolderMenu.delete) _confirmDelete(context);
+          },
+          itemBuilder: (_) => [
+            const PopupMenuItem(
+              value: _FolderMenu.rename,
+              child: Row(children: [Icon(Icons.edit_outlined, size: 20), SizedBox(width: 12), Text('Đổi tên')]),
+            ),
+            const PopupMenuItem(
+              value: _FolderMenu.delete,
+              child: Row(children: [Icon(Icons.delete_outline, size: 20, color: Colors.red), SizedBox(width: 12), Text('Xóa', style: TextStyle(color: Colors.red))]),
+            ),
+          ],
+        ),
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => FolderNotesPage(folder: folder))),
+      ),
     );
   }
 
-  void _showRenameDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (_) => RenameFolderDialog(folderId: folder.id!, initialName: folder.name),
-    );
-  }
-
-  void _confirmDelete(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (_) => DeleteFolderConfirmDialog(folderId: folder.id!, folderName: folder.name),
-    );
-  }
+  void _showRenameDialog(BuildContext context) => showDialog(context: context, builder: (_) => RenameFolderDialog(folderId: folder.id!, initialName: folder.name));
+  void _confirmDelete(BuildContext context) => showDialog(context: context, builder: (_) => DeleteFolderConfirmDialog(folderId: folder.id!, folderName: folder.name));
 }
 
 enum _FolderMenu { rename, delete }

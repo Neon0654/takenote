@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Simple AppBar for NotePage.
 class NoteAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool isEdit;
   const NoteAppBar({Key? key, required this.isEdit}) : super(key: key);
@@ -8,7 +7,13 @@ class NoteAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      title: Text(isEdit ? 'Chỉnh sửa ghi chú' : 'Thêm ghi chú'),
+      centerTitle: true,
+      elevation: 0,
+      scrolledUnderElevation: 2,
+      title: Text(
+        isEdit ? 'Chỉnh sửa ghi chú' : 'Ghi chú mới',
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+      ),
     );
   }
 

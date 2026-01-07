@@ -26,13 +26,14 @@ class HomeBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
+        const SizedBox(height: 8),
         TagBar(tags: tags, selectedTagId: selectedTagId),
-        const Divider(height: 1),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.0),
+          child: Divider(height: 24, thickness: 1),
+        ),
         Expanded(
-          child: NoteGrid(
-            notes: notes,
-            onOpenNote: onOpenNote,
-          ),
+          child: NoteGrid(notes: notes, onOpenNote: onOpenNote),
         ),
       ],
     );

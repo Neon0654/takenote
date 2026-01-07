@@ -75,31 +75,47 @@ class _FolderNotesPageState extends State<FolderNotesPage> {
     );
   }
 
+  // ... inside _FolderNotesPageState
   void _showAddNoteOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (_) {
         return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.drive_file_move),
-                title: const Text('Chuyển ghi chú có sẵn'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _openMoveNotesPage(context);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.note_add),
-                title: const Text('Thêm ghi chú mới'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _openCreateNotePage(context);
-                },
-              ),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  leading: const Icon(Icons.drive_file_move_outlined),
+                  title: const Text('Chuyển ghi chú có sẵn'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _openMoveNotesPage(context);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.note_add_outlined),
+                  title: const Text('Thêm ghi chú mới'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _openCreateNotePage(context);
+                  },
+                ),
+              ],
+            ),
           ),
         );
       },

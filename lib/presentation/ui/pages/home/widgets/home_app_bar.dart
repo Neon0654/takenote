@@ -37,38 +37,67 @@ class _NormalAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      title: const Text('Ghi chú'),
+      title: const Text(
+        'Ghi chú',
+        style: TextStyle(fontWeight: FontWeight.bold),
+      ),
+      elevation: 0,
       actions: [
         IconButton(
-          icon: const Icon(Icons.search),
-          onPressed: () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const SearchPage()));
-          },
+          icon: const Icon(Icons.search_rounded),
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const SearchPage()),
+          ),
         ),
-
         const SortMenu(),
-
         PopupMenuButton<_HomeMenu>(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           onSelected: (value) {
-            switch (value) {
-              case _HomeMenu.folder:
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const FolderListPage()));
-                break;
-              case _HomeMenu.tag:
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const TagManagementPage()));
-                break;
-              case _HomeMenu.trash:
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const TrashPage()));
-                break;
-            }
+            final routes = {
+              _HomeMenu.folder: () => const FolderListPage(),
+              _HomeMenu.tag: () => const TagManagementPage(),
+              _HomeMenu.trash: () => const TrashPage(),
+            };
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => routes[value]!()),
+            );
           },
-          itemBuilder: (_) => const [
-            PopupMenuItem(value: _HomeMenu.folder, child: ListTile(leading: Icon(Icons.folder), title: Text('Thư mục'))),
-            PopupMenuItem(value: _HomeMenu.tag, child: ListTile(leading: Icon(Icons.label), title: Text('Nhãn'))),
-            PopupMenuItem(value: _HomeMenu.trash, child: ListTile(leading: Icon(Icons.delete), title: Text('Thùng rác'))),
+          itemBuilder: (_) => [
+            _buildMenuItem(
+              _HomeMenu.folder,
+              Icons.folder_open_rounded,
+              'Thư mục',
+            ),
+            _buildMenuItem(_HomeMenu.tag, Icons.label_outline_rounded, 'Nhãn'),
+            _buildMenuItem(
+              _HomeMenu.trash,
+              Icons.delete_outline_rounded,
+              'Thùng rác',
+            ),
           ],
         ),
       ],
+    );
+  }
+
+  PopupMenuItem<_HomeMenu> _buildMenuItem(
+    _HomeMenu value,
+    IconData icon,
+    String label,
+  ) {
+    return PopupMenuItem(
+      value: value,
+      child: Row(
+        children: [
+          Icon(icon, size: 20),
+          const SizedBox(width: 12),
+          Text(label),
+        ],
+      ),
     );
   }
 }
@@ -80,45 +109,50 @@ class _SelectionAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
+      backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
       leading: IconButton(
-        icon: const Icon(Icons.close),
+        icon: const Icon(Icons.close_rounded),
         onPressed: () => context.read<SelectionCubit>().clear(),
       ),
-      title: Text('${selection.selectedIds.length} đã chọn'),
+      title: Text(
+        '${selection.selectedIds.length} đã chọn',
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+      ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.select_all),
+          icon: const Icon(Icons.select_all_rounded),
           onPressed: () {
             final state = context.read<NoteCubit>().state;
-            if (state is! NoteLoaded) return;
-
-            context.read<SelectionCubit>().selectAll(
-              state.notes.map((e) => e.note.id!).toList(),
-            );
+            if (state is NoteLoaded) {
+              context.read<SelectionCubit>().selectAll(
+                state.notes.map((e) => e.note.id!).toList(),
+              );
+            }
           },
         ),
-
         IconButton(
-          icon: const Icon(Icons.label),
+          icon: const Icon(Icons.label_outline_rounded),
           onPressed: selection.selectedIds.isEmpty
               ? null
               : () async {
                   await showDialog(
                     context: context,
-                    builder: (_) => MultiNoteTagDialog(noteIds: selection.selectedIds),
+                    builder: (_) =>
+                        MultiNoteTagDialog(noteIds: selection.selectedIds),
                   );
-
                   context.read<NoteCubit>().loadNotes();
                   context.read<SelectionCubit>().clear();
                 },
         ),
-
         IconButton(
-          icon: const Icon(Icons.delete),
+          icon: const Icon(Icons.delete_outline_rounded),
+          color: Colors.redAccent,
           onPressed: selection.selectedIds.isEmpty
               ? null
               : () async {
-                  await context.read<NoteCubit>().deleteNotes(selection.selectedIds);
+                  await context.read<NoteCubit>().deleteNotes(
+                    selection.selectedIds,
+                  );
                   context.read<SelectionCubit>().clear();
                 },
         ),
