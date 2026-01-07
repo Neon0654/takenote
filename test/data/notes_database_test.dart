@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:notes/data/database/notes_database.dart';
-import 'package:notes/data/models/note.dart';
+import 'package:notes/data/models/note_model.dart';
 import '../test_config.dart';
 
 void main() {

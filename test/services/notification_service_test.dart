@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:notes/data/models/reminder.dart';
+import 'package:notes/data/models/reminder_model.dart';
 
 /// 🔔 Fake Notification Service để test
 class FakeNotificationService {
