@@ -5,6 +5,7 @@ import '../../../domain/usecases/folder/get_folders_usecase.dart';
 import '../../../domain/usecases/folder/create_folder_usecase.dart';
 import '../../../domain/usecases/folder/rename_folder_usecase.dart';
 import '../../../domain/usecases/folder/delete_folder_usecase.dart';
+import '../../../domain/usecases/folder/count_notes_by_folder_usecase.dart';
 
 import 'folder_state.dart';
 
@@ -15,6 +16,8 @@ class FolderCubit extends Cubit<FolderState> {
   final CreateFolderUseCase createFolderUseCase;
   final RenameFolderUseCase renameFolderUseCase;
   final DeleteFolderUseCase deleteFolderUseCase;
+  final CountNotesByFolderUseCase countNotesByFolderUseCase;
+
 
   FolderCubit(
     this.repo, {
@@ -22,17 +25,20 @@ class FolderCubit extends Cubit<FolderState> {
     CreateFolderUseCase? createFolderUseCase,
     RenameFolderUseCase? renameFolderUseCase,
     DeleteFolderUseCase? deleteFolderUseCase,
+    CountNotesByFolderUseCase? countNotesByFolderUseCase,
   })  : getFoldersUseCase = getFoldersUseCase ?? GetFoldersUseCase(repo),
         createFolderUseCase = createFolderUseCase ?? CreateFolderUseCase(repo),
         renameFolderUseCase = renameFolderUseCase ?? RenameFolderUseCase(repo),
         deleteFolderUseCase = deleteFolderUseCase ?? DeleteFolderUseCase(repo),
+        countNotesByFolderUseCase = countNotesByFolderUseCase ?? CountNotesByFolderUseCase(repo),
         super(FolderLoading());
 
   Future<void> loadFolders() async {
     try {
       emit(FolderLoading());
       final folders = await getFoldersUseCase.call();
-      emit(FolderLoaded(folders, {}));
+      final noteCount = await countNotesByFolderUseCase.call();
+      emit(FolderLoaded(folders, noteCount));
     } catch (e) {
       emit(FolderError(e.toString()));
     }

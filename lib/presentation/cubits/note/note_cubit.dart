@@ -8,7 +8,6 @@ import '../../../domain/repositories/attachment_repository.dart';
 import '../../../domain/repositories/reminder_repository.dart';
 import '../../../domain/entities/attachment_entity.dart';
 
-
 import '../../../domain/usecases/note/load_notes_usecase.dart';
 import '../../../domain/usecases/note/add_note_usecase.dart';
 import '../../../domain/usecases/note/update_note_usecase.dart';
@@ -32,7 +31,6 @@ class NoteCubit extends Cubit<NoteState> {
   final AttachmentRepository attachmentRepo;
   final ReminderRepository reminderRepo;
 
-  
   final LoadNotesUseCase loadNotesUseCase;
   final AddNoteUseCase addNoteUseCase;
   final UpdateNoteUseCase updateNoteUseCase;
@@ -48,7 +46,6 @@ class NoteCubit extends Cubit<NoteState> {
   int? _selectedTagId;
   NoteViewMode _mode = NoteViewMode.all;
 
-  
   NoteSortField _sortField = NoteSortField.createdAt;
   SortOrder _sortOrder = SortOrder.desc;
 
@@ -76,8 +73,10 @@ class NoteCubit extends Cubit<NoteState> {
        updateNoteUseCase = updateNoteUseCase ?? UpdateNoteUseCase(noteRepo),
        addReminderUseCase =
            addReminderUseCase ?? AddReminderUseCase(reminderRepo),
-       markReminderDoneUseCase = markReminderDoneUseCase ?? MarkReminderDoneUseCase(reminderRepo),
-       deleteReminderUseCase = deleteReminderUseCase ?? DeleteReminderUseCase(reminderRepo),
+       markReminderDoneUseCase =
+           markReminderDoneUseCase ?? MarkReminderDoneUseCase(reminderRepo),
+       deleteReminderUseCase =
+           deleteReminderUseCase ?? DeleteReminderUseCase(reminderRepo),
        deleteNotesUseCase = deleteNotesUseCase ?? DeleteNotesUseCase(noteRepo),
        restoreNotesUseCase =
            restoreNotesUseCase ?? RestoreNotesUseCase(noteRepo),
@@ -87,12 +86,10 @@ class NoteCubit extends Cubit<NoteState> {
            moveNotesToFolderUseCase ?? MoveNotesToFolderUseCase(noteRepo),
        super(NoteInitial());
 
-  
   Future<void> loadNotes() async {
     try {
       emit(NoteLoading());
 
-      
       final result = await loadNotesUseCase.call(
         folderId: _folderId,
         selectedTagId: _selectedTagId,
@@ -103,7 +100,6 @@ class NoteCubit extends Cubit<NoteState> {
       _cachedTags = result.tags;
       final noteViewModels = result.notes;
 
-      
       _applySort(noteViewModels);
 
       emit(
@@ -119,11 +115,8 @@ class NoteCubit extends Cubit<NoteState> {
     }
   }
 
-  
   void selectTag(int? tagId) {
-    _mode = NoteViewMode.all;
     _selectedTagId = tagId;
-    _folderId = null;
     loadNotes();
   }
 
@@ -148,7 +141,6 @@ class NoteCubit extends Cubit<NoteState> {
     loadNotes();
   }
 
-  
   void showTrash() {
     _mode = NoteViewMode.trash;
     _folderId = null;
@@ -156,7 +148,6 @@ class NoteCubit extends Cubit<NoteState> {
     loadNotes();
   }
 
-  
   Future<void> addNote(String title, String content, {int? folderId}) async {
     await addNoteUseCase.call(
       title: title,
@@ -187,13 +178,11 @@ class NoteCubit extends Cubit<NoteState> {
     loadNotes();
   }
 
-  
   Future<void> restoreNotes(Set<int> noteIds) async {
     await restoreNotesUseCase.call(noteIds);
     loadNotes();
   }
 
-  
   Future<void> deleteForever(Set<int> noteIds) async {
     await deleteForeverUseCase.call(noteIds);
     loadNotes();
@@ -207,7 +196,6 @@ class NoteCubit extends Cubit<NoteState> {
     loadNotes();
   }
 
-  
   void setSort(NoteSortField field, SortOrder order) {
     _sortField = field;
     _sortOrder = order;
@@ -216,7 +204,6 @@ class NoteCubit extends Cubit<NoteState> {
 
   void _applySort(List<NoteViewModel> list) {
     list.sort((a, b) {
-      
       if (a.note.isPinned != b.note.isPinned) {
         return b.note.isPinned ? 1 : -1;
       }
@@ -241,20 +228,18 @@ class NoteCubit extends Cubit<NoteState> {
     });
   }
 
-  
   Future<void> addReminderToNote({
     required int noteId,
     required DateTime remindAt,
   }) async {
     await addReminderUseCase.call(noteId: noteId, remindAt: remindAt);
 
-    
     await loadNotes();
   }
 
   Future<void> markReminderDone(int reminderId) async {
     await markReminderDoneUseCase.call(reminderId);
-    await loadNotes(); 
+    await loadNotes();
   }
 
   Future<void> deleteReminder(int reminderId) async {
@@ -262,7 +247,6 @@ class NoteCubit extends Cubit<NoteState> {
     await loadNotes();
   }
 
-  
   Future<void> addAttachmentToNote({
     required int noteId,
     required String filePath,
@@ -285,9 +269,4 @@ class NoteCubit extends Cubit<NoteState> {
   }
 }
 
-enum NoteViewMode {
-  all,
-  folder,
-  unassigned, 
-  trash, 
-}
+enum NoteViewMode { all, folder, unassigned, trash }

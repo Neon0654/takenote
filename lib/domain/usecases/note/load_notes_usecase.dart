@@ -6,19 +6,12 @@ import '../../repositories/tag_repository.dart';
 import '../../repositories/attachment_repository.dart';
 import '../../repositories/reminder_repository.dart';
 
-
 class LoadNotesResult {
   final List<NoteViewModel> notes;
   final List<TagEntity> tags;
 
-  LoadNotesResult({
-    required this.notes,
-    required this.tags,
-  });
+  LoadNotesResult({required this.notes, required this.tags});
 }
-
-
-
 
 class LoadNotesUseCase {
   final NoteRepository noteRepo;
@@ -39,7 +32,6 @@ class LoadNotesUseCase {
     bool isTrash = false,
     bool isUnassigned = false,
   }) async {
-    
     final tags = await tagRepo.getAllTags();
 
     List<NoteEntity> notes;
@@ -50,10 +42,15 @@ class LoadNotesUseCase {
       notes = await noteRepo.getNotesWithoutFolder();
     } else if (folderId != null) {
       notes = await noteRepo.getNotes(folderId: folderId);
-    } else if (selectedTagId != null) {
-      notes = await tagRepo.getNotesByTag(selectedTagId);
     } else {
       notes = await noteRepo.getNotes();
+    }
+
+    if (selectedTagId != null) {
+      final notesByTag = await tagRepo.getNotesByTag(selectedTagId);
+      final noteIdsByTag = notesByTag.map((e) => e.id).toSet();
+
+      notes = notes.where((n) => noteIdsByTag.contains(n.id)).toList();
     }
 
     final viewModels = <NoteViewModel>[];
@@ -75,9 +72,6 @@ class LoadNotesUseCase {
       );
     }
 
-    return LoadNotesResult(
-      notes: viewModels,
-      tags: tags,
-    );
+    return LoadNotesResult(notes: viewModels, tags: tags);
   }
 }
