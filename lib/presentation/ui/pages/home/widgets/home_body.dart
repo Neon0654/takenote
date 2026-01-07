@@ -1,0 +1,40 @@
+import 'package:flutter/material.dart';
+import 'package:notes/data/viewmodel/note_view_model.dart';
+import 'package:notes/domain/entities/tag_entity.dart';
+
+import '../../../widgets/tag_bar.dart';
+import '../../../widgets/note_grid.dart';
+
+/// Small widget that renders the tag bar + notes grid.
+class HomeBody extends StatelessWidget {
+  final List<NoteViewModel> notes;
+  final List<TagEntity> tags;
+  final int? selectedTagId;
+  final int? folderId;
+  final ValueChanged<NoteViewModel> onOpenNote;
+
+  const HomeBody({
+    Key? key,
+    required this.notes,
+    required this.tags,
+    required this.selectedTagId,
+    required this.folderId,
+    required this.onOpenNote,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        TagBar(tags: tags, selectedTagId: selectedTagId),
+        const Divider(height: 1),
+        Expanded(
+          child: NoteGrid(
+            notes: notes,
+            onOpenNote: onOpenNote,
+          ),
+        ),
+      ],
+    );
+  }
+}

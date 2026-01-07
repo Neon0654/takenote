@@ -8,6 +8,8 @@ import '../../../../domain/entities/note_entity.dart';
 import '../../../../presentation/cubits/note/note_cubit.dart';
 import '../../../ui/widgets/tag_selector_dialog.dart';
 import '../../../../data/viewmodel/note_view_model.dart';
+import 'widgets/note_app_bar.dart';
+import 'widgets/note_body.dart';
 
 class NotePage extends StatefulWidget {
   final NoteEntity? note;
@@ -100,6 +102,15 @@ class _NotePageState extends State<NotePage> {
     setState(() => _showMetaDetail = !_showMetaDetail);
   }
 
+  Future<void> _onAddTag(int noteId) async {
+    await showDialog(
+      context: context,
+      builder: (_) => TagSelectorDialog(noteId: noteId),
+    );
+
+    await context.read<NoteCubit>().loadNotes();
+  }
+
   // ================= REMINDER =================
   // Note: accept noteId so we always operate on the current VM note id
   // and do NOT call setState() after mutating data - the cubit reloads and
@@ -158,9 +169,7 @@ class _NotePageState extends State<NotePage> {
         return true;
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(isEdit ? 'Chỉnh sửa ghi chú' : 'Thêm ghi chú'),
-        ),
+        appBar: NoteAppBar(isEdit: isEdit),
 
         body: BlocBuilder<NoteCubit, NoteState>(
           // Ensure this builder listens to the same cubit instance that
@@ -183,7 +192,16 @@ class _NotePageState extends State<NotePage> {
               );
 
               _initControllersFromVm(vm);
-              return _buildContent(context, vm);
+              return NoteBody(
+                vm: vm,
+                titleController: _titleController,
+                contentController: _contentController,
+                showMetaDetail: _showMetaDetail,
+                toggleMetaDetail: _toggleMetaDetail,
+                onAddTag: (id) => _onAddTag(id),
+                onPickAttachment: (id) => _pickAttachment(id),
+                onAddReminder: (id) => _openReminderDialog(id),
+              );
             }
 
             // For editing (existing) note, wait for the cubit to load notes.
@@ -202,146 +220,19 @@ class _NotePageState extends State<NotePage> {
             );
 
             _initControllersFromVm(vm);
-            return _buildContent(context, vm);
+            return NoteBody(
+              vm: vm,
+              titleController: _titleController,
+              contentController: _contentController,
+              showMetaDetail: _showMetaDetail,
+              toggleMetaDetail: _toggleMetaDetail,
+              onAddTag: (id) => _onAddTag(id),
+              onPickAttachment: (id) => _pickAttachment(id),
+              onAddReminder: (id) => _openReminderDialog(id),
+            );
           },
         ),
       ),
     );
   }
-
-  // ================= UI PARTS =================
-  Widget _buildContent(BuildContext context, NoteViewModel vm) {
-    final note = vm.note;
-
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          TextField(
-            controller: _titleController,
-            decoration: const InputDecoration(
-              hintText: 'Tiêu đề',
-              border: InputBorder.none,
-            ),
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-          ),
-
-          if (note.tags.isNotEmpty)
-            Wrap(
-              spacing: 6,
-              children: note.tags
-                  .map((t) => Chip(label: Text('#${t.name}')))
-                  .toList(),
-            ),
-
-          const Divider(),
-
-          _buildMetaActions(note.id),
-
-          AnimatedCrossFade(
-            firstChild: const SizedBox.shrink(),
-            secondChild: _buildMetaDetail(context, vm),
-            crossFadeState: _showMetaDetail
-                ? CrossFadeState.showSecond
-                : CrossFadeState.showFirst,
-            duration: const Duration(milliseconds: 200),
-          ),
-
-          const Divider(),
-
-          Expanded(
-            child: TextField(
-              controller: _contentController,
-              maxLines: null,
-              expands: true,
-              decoration: const InputDecoration(
-                hintText: 'Nội dung ghi chú...',
-                border: InputBorder.none,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMetaActions(int? noteId) {
-    return Wrap(
-      spacing: 16,
-      runSpacing: 8,
-      children: [
-        _metaButton(Icons.label_outline, 'Thêm tag', () {
-          if (noteId == null) return;
-          showDialog(
-            context: context,
-            builder: (_) => TagSelectorDialog(noteId: noteId),
-          ).then((_) => context.read<NoteCubit>().loadNotes());
-        }),
-        _metaButton(Icons.attach_file, 'Đính kèm', () {
-          if (noteId == null) return;
-          _pickAttachment(noteId);
-        }),
-        _metaButton(Icons.alarm, 'Nhắc nhở', () {
-          if (noteId == null) return;
-          _openReminderDialog(noteId);
-        }),
-        IconButton(
-          icon: Icon(_showMetaDetail ? Icons.expand_less : Icons.expand_more),
-          onPressed: _toggleMetaDetail,
-        ),
-      ],
-    );
-  }
-}
-
-Widget _buildMetaDetail(BuildContext context, NoteViewModel vm) {
-  final note = vm.note;
-
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      // ===== TAG =====
-      if (note.tags.isNotEmpty) ...[
-        const Text('Tag', style: TextStyle(fontWeight: FontWeight.w600)),
-        Wrap(
-          spacing: 6,
-          children: note.tags
-              .map((t) => Chip(label: Text('#${t.name}')))
-              .toList(),
-        ),
-      ],
-
-      // ===== REMINDER =====
-      ...vm.reminders.map(
-        (r) => ListTile(
-          dense: true,
-          leading: const Icon(Icons.alarm),
-          title: Text(
-            '${r.remindAt.day}/${r.remindAt.month}/${r.remindAt.year} '
-            '${r.remindAt.hour}:${r.remindAt.minute.toString().padLeft(2, '0')}',
-          ),
-          trailing: IconButton(
-            icon: const Icon(Icons.close, size: 18),
-            tooltip: 'Xoá nhắc nhở',
-            onPressed: () {
-              context.read<NoteCubit>().deleteReminder(r.id!);
-            },
-          ),
-        ),
-      ),
-    ],
-  );
-}
-
-Widget _metaButton(IconData icon, String label, VoidCallback onTap) {
-  return Padding(
-    padding: const EdgeInsets.only(right: 16),
-    child: InkWell(
-      onTap: onTap,
-      child: Row(
-        children: [Icon(icon, size: 20), const SizedBox(width: 4), Text(label)],
-      ),
-    ),
-  );
 }

@@ -42,6 +42,7 @@ class NoteRepositoryImpl implements NoteRepository {
         title: note.title,
         content: note.content,
         createdAt: note.createdAt,
+        updatedAt: note.updatedAt,
         isPinned: note.isPinned,
         isDeleted: note.isDeleted,
       ),
@@ -62,6 +63,7 @@ class NoteRepositoryImpl implements NoteRepository {
         title: note.title,
         content: note.content,
         createdAt: note.createdAt,
+        updatedAt: note.updatedAt,
         isPinned: note.isPinned,
         isDeleted: note.isDeleted,
       ),
@@ -76,6 +78,7 @@ class NoteRepositoryImpl implements NoteRepository {
         title: note.title,
         content: note.content,
         createdAt: note.createdAt,
+        updatedAt: DateTime.now(), // update timestamp when toggling pin
         isPinned: !note.isPinned,
         isDeleted: note.isDeleted,
       ),

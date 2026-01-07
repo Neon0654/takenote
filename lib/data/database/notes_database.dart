@@ -26,7 +26,7 @@ class NotesDatabase {
     if (Platform.environment.containsKey('FLUTTER_TEST')) {
       return openDatabase(
         inMemoryDatabasePath,
-        version: 9,
+        version: 10, // bumped version to add updatedAt
         onCreate: _createDB,
         onUpgrade: _upgradeDB,
       );
@@ -37,7 +37,7 @@ class NotesDatabase {
 
     return openDatabase(
       path,
-      version: 9,
+      version: 10, // bumped version to add updatedAt
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -51,6 +51,7 @@ class NotesDatabase {
         title TEXT,
         content TEXT,
         createdAt TEXT,
+        updatedAt TEXT,
         isPinned INTEGER DEFAULT 0,
         isDeleted INTEGER DEFAULT 0,
         folderId INTEGER
@@ -186,6 +187,19 @@ class NotesDatabase {
         )
       ''');
     }
+
+    if (oldVersion < 10) {
+      final columns = await db.rawQuery('PRAGMA table_info(notes)');
+      final hasUpdatedAt = columns.any((c) => c['name'] == 'updatedAt');
+
+      if (!hasUpdatedAt) {
+        await db.execute('ALTER TABLE notes ADD COLUMN updatedAt TEXT');
+      }
+
+      await db.execute(
+        'UPDATE notes SET updatedAt = createdAt WHERE updatedAt IS NULL',
+      );
+    }
   }
 
   // ================= NOTE =================
@@ -202,7 +216,7 @@ class NotesDatabase {
     final result = await db.query(
       'notes',
       where: 'isDeleted = 0',
-      orderBy: 'isPinned DESC, createdAt DESC',
+      orderBy: 'isPinned DESC',
     );
     return result.map((e) => NoteModel.fromMap(e)).toList();
   }
@@ -242,7 +256,11 @@ class NotesDatabase {
     final db = await database;
     await db.update(
       'notes',
-      {'isDeleted': 1, 'isPinned': 0},
+      {
+        'isDeleted': 1,
+        'isPinned': 0,
+        'updatedAt': DateTime.now().toIso8601String(), // update timestamp
+      },
       where: 'id = ?',
       whereArgs: [id],
     );
@@ -253,7 +271,10 @@ class NotesDatabase {
     final db = await database;
     await db.update(
       'notes',
-      {'isDeleted': 0},
+      {
+        'isDeleted': 0,
+        'updatedAt': DateTime.now().toIso8601String(), // update timestamp
+      },
       where: 'id = ?',
       whereArgs: [id],
     );

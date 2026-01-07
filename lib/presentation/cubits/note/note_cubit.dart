@@ -1,4 +1,3 @@
-import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../domain/entities/note_entity.dart';
 import '../../../domain/entities/tag_entity.dart';
@@ -8,10 +7,24 @@ import '../../../data/viewmodel/note_view_model.dart';
 import '../../../domain/repositories/attachment_repository.dart';
 import '../../../domain/repositories/reminder_repository.dart';
 import '../../../domain/entities/attachment_entity.dart';
-import '../../../domain/entities/reminder_entity.dart';
-import '../../../services/notification_service.dart';
+
+// UseCases
+import '../../../domain/usecases/note/load_notes_usecase.dart';
+import '../../../domain/usecases/note/add_note_usecase.dart';
+import '../../../domain/usecases/note/update_note_usecase.dart';
+import '../../../domain/usecases/note/add_reminder_usecase.dart';
+import '../../../domain/usecases/reminder/mark_reminder_done_usecase.dart';
+import '../../../domain/usecases/reminder/delete_reminder_usecase.dart';
+import '../../../domain/usecases/note/delete_notes_usecase.dart';
+import '../../../domain/usecases/note/restore_notes_usecase.dart';
+import '../../../domain/usecases/note/delete_forever_usecase.dart';
+import '../../../domain/usecases/note/move_notes_to_folder_usecase.dart';
 
 import 'note_state.dart';
+
+enum NoteSortField { title, createdAt, updatedAt }
+
+enum SortOrder { asc, desc }
 
 class NoteCubit extends Cubit<NoteState> {
   final NoteRepository noteRepo;
@@ -19,60 +32,79 @@ class NoteCubit extends Cubit<NoteState> {
   final AttachmentRepository attachmentRepo;
   final ReminderRepository reminderRepo;
 
+  // Use cases (business logic moved out of cubit)
+  final LoadNotesUseCase loadNotesUseCase;
+  final AddNoteUseCase addNoteUseCase;
+  final UpdateNoteUseCase updateNoteUseCase;
+  final AddReminderUseCase addReminderUseCase;
+  final MarkReminderDoneUseCase markReminderDoneUseCase;
+  final DeleteReminderUseCase deleteReminderUseCase;
+  final DeleteNotesUseCase deleteNotesUseCase;
+  final RestoreNotesUseCase restoreNotesUseCase;
+  final DeleteForeverUseCase deleteForeverUseCase;
+  final MoveNotesToFolderUseCase moveNotesToFolderUseCase;
+
   int? _folderId;
   int? _selectedTagId;
   NoteViewMode _mode = NoteViewMode.all;
 
+  // 🎛️ sorting state owned by cubit
+  NoteSortField _sortField = NoteSortField.createdAt;
+  SortOrder _sortOrder = SortOrder.desc;
+
   List<TagEntity> _cachedTags = [];
 
-  NoteCubit(this.noteRepo, this.tagRepo, this.attachmentRepo, this.reminderRepo)
-    : super(NoteInitial());
+  NoteCubit(
+    this.noteRepo,
+    this.tagRepo,
+    this.attachmentRepo,
+    this.reminderRepo, {
+    LoadNotesUseCase? loadNotesUseCase,
+    AddNoteUseCase? addNoteUseCase,
+    UpdateNoteUseCase? updateNoteUseCase,
+    AddReminderUseCase? addReminderUseCase,
+    MarkReminderDoneUseCase? markReminderDoneUseCase,
+    DeleteReminderUseCase? deleteReminderUseCase,
+    DeleteNotesUseCase? deleteNotesUseCase,
+    RestoreNotesUseCase? restoreNotesUseCase,
+    DeleteForeverUseCase? deleteForeverUseCase,
+    MoveNotesToFolderUseCase? moveNotesToFolderUseCase,
+  }) : loadNotesUseCase =
+           loadNotesUseCase ??
+           LoadNotesUseCase(noteRepo, tagRepo, attachmentRepo, reminderRepo),
+       addNoteUseCase = addNoteUseCase ?? AddNoteUseCase(noteRepo),
+       updateNoteUseCase = updateNoteUseCase ?? UpdateNoteUseCase(noteRepo),
+       addReminderUseCase =
+           addReminderUseCase ?? AddReminderUseCase(reminderRepo),
+       markReminderDoneUseCase = markReminderDoneUseCase ?? MarkReminderDoneUseCase(reminderRepo),
+       deleteReminderUseCase = deleteReminderUseCase ?? DeleteReminderUseCase(reminderRepo),
+       deleteNotesUseCase = deleteNotesUseCase ?? DeleteNotesUseCase(noteRepo),
+       restoreNotesUseCase =
+           restoreNotesUseCase ?? RestoreNotesUseCase(noteRepo),
+       deleteForeverUseCase =
+           deleteForeverUseCase ?? DeleteForeverUseCase(noteRepo),
+       moveNotesToFolderUseCase =
+           moveNotesToFolderUseCase ?? MoveNotesToFolderUseCase(noteRepo),
+       super(NoteInitial());
 
   // ================= LOAD =================
   Future<void> loadNotes() async {
     try {
       emit(NoteLoading());
 
-      if (_cachedTags.isEmpty) {
-        _cachedTags = await tagRepo.getAllTags();
-      }
+      // Delegate fetching and VM building to use case
+      final result = await loadNotesUseCase.call(
+        folderId: _folderId,
+        selectedTagId: _selectedTagId,
+        isTrash: _mode == NoteViewMode.trash,
+        isUnassigned: _mode == NoteViewMode.unassigned,
+      );
 
-      List<NoteEntity> notes;
+      _cachedTags = result.tags;
+      final noteViewModels = result.notes;
 
-      switch (_mode) {
-        case NoteViewMode.folder:
-          notes = await noteRepo.getNotes(folderId: _folderId);
-          break;
-        case NoteViewMode.unassigned:
-          notes = await noteRepo.getNotesWithoutFolder();
-          break;
-        case NoteViewMode.trash:
-          notes = await noteRepo.getDeletedNotes();
-          break;
-        case NoteViewMode.all:
-          notes = _selectedTagId != null
-              ? await tagRepo.getNotesByTag(_selectedTagId!)
-              : await noteRepo.getNotes();
-      }
-
-      final noteViewModels = <NoteViewModel>[];
-
-      for (final note in notes) {
-        if (note.id == null) continue;
-
-        final tags = await tagRepo.getTagsOfNote(note.id!);
-        final attachments = await attachmentRepo.getByNote(note.id!);
-        final reminders = await reminderRepo.getByNote(note.id!);
-
-        noteViewModels.add(
-          NoteViewModel(
-            note: note.copyWith(tags: tags),
-            attachmentCount: attachments.length,
-            attachments: attachments,
-            reminders: reminders,
-          ),
-        );
-      }
+      // Apply sorting after fetching and building view models (presentation concern)
+      _applySort(noteViewModels);
 
       emit(
         NoteLoaded(
@@ -126,14 +158,9 @@ class NoteCubit extends Cubit<NoteState> {
 
   // ================= CRUD =================
   Future<void> addNote(String title, String content, {int? folderId}) async {
-    await noteRepo.addNote(
-      NoteEntity(
-        title: title,
-        content: content,
-        createdAt: DateTime.now(),
-        isDeleted: false,
-        isPinned: false,
-      ),
+    await addNoteUseCase.call(
+      title: title,
+      content: content,
       folderId: folderId,
     );
 
@@ -146,7 +173,7 @@ class NoteCubit extends Cubit<NoteState> {
   }
 
   Future<void> updateNote(NoteEntity note) async {
-    await noteRepo.updateNote(note);
+    await updateNoteUseCase.call(note);
     loadNotes();
   }
 
@@ -156,25 +183,19 @@ class NoteCubit extends Cubit<NoteState> {
   }
 
   Future<void> deleteNotes(Set<int> noteIds) async {
-    for (final id in noteIds) {
-      await noteRepo.moveToTrash(id);
-    }
+    await deleteNotesUseCase.call(noteIds);
     loadNotes();
   }
 
   /// Restore notes from trash (soft restore)
   Future<void> restoreNotes(Set<int> noteIds) async {
-    for (final id in noteIds) {
-      await noteRepo.restoreNote(id);
-    }
+    await restoreNotesUseCase.call(noteIds);
     loadNotes();
   }
 
   /// Permanently delete notes
   Future<void> deleteForever(Set<int> noteIds) async {
-    for (final id in noteIds) {
-      await noteRepo.deleteNotePermanently(id);
-    }
+    await deleteForeverUseCase.call(noteIds);
     loadNotes();
   }
 
@@ -182,10 +203,42 @@ class NoteCubit extends Cubit<NoteState> {
     required Set<int> noteIds,
     int? folderId,
   }) async {
-    for (final id in noteIds) {
-      await noteRepo.moveNoteToFolder(noteId: id, folderId: folderId);
-    }
+    await moveNotesToFolderUseCase.call(noteIds: noteIds, folderId: folderId);
     loadNotes();
+  }
+
+  // ================= SORT =================
+  void setSort(NoteSortField field, SortOrder order) {
+    _sortField = field;
+    _sortOrder = order;
+    loadNotes();
+  }
+
+  void _applySort(List<NoteViewModel> list) {
+    list.sort((a, b) {
+      // keep pinned notes on top
+      if (a.note.isPinned != b.note.isPinned) {
+        return b.note.isPinned ? 1 : -1;
+      }
+
+      int cmp = 0;
+
+      switch (_sortField) {
+        case NoteSortField.title:
+          cmp = a.note.title.toLowerCase().compareTo(
+            b.note.title.toLowerCase(),
+          );
+          break;
+        case NoteSortField.createdAt:
+          cmp = a.note.createdAt.compareTo(b.note.createdAt);
+          break;
+        case NoteSortField.updatedAt:
+          cmp = a.note.updatedAt.compareTo(b.note.updatedAt);
+          break;
+      }
+
+      return _sortOrder == SortOrder.asc ? cmp : -cmp;
+    });
   }
 
   // ================= REMINDER =================
@@ -193,40 +246,19 @@ class NoteCubit extends Cubit<NoteState> {
     required int noteId,
     required DateTime remindAt,
   }) async {
-    final notificationId = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    await addReminderUseCase.call(noteId: noteId, remindAt: remindAt);
 
-    final reminder = ReminderEntity(
-      noteId: noteId,
-      remindAt: remindAt,
-      notificationId: notificationId,
-    );
-
-    // 1️⃣ LƯU DB TRƯỚC (QUAN TRỌNG)
-    await reminderRepo.add(reminder);
-
-    // 2️⃣ THỬ SCHEDULE – FAIL CŨNG KỆ
-    try {
-      await NotificationService.schedule(
-        id: notificationId,
-        title: 'Nhắc nhở ghi chú',
-        body: '',
-        time: remindAt,
-      );
-    } catch (e) {
-      debugPrint('⚠️ schedule failed but ignore: $e');
-    }
-
-    // 3️⃣ LUÔN REFRESH UI
+    // refresh UI
     await loadNotes();
   }
 
   Future<void> markReminderDone(int reminderId) async {
-    await reminderRepo.markDone(reminderId);
+    await markReminderDoneUseCase.call(reminderId);
     await loadNotes(); // 🔥 refresh lại meta
   }
 
   Future<void> deleteReminder(int reminderId) async {
-    await reminderRepo.delete(reminderId);
+    await deleteReminderUseCase.call(reminderId);
     await loadNotes();
   }
 

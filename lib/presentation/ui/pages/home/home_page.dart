@@ -9,16 +9,9 @@ import '../../../cubits/tag/tag_state.dart';
 
 import '../../../cubits/selection/selection_cubit.dart';
 
-import '../../widgets/note_grid.dart';
-import '../../widgets/tag_bar.dart';
-import '../../widgets/multi_note_tag_dialog.dart';
-
 import '../note/note_page.dart';
-import '../folder/folder_list_page.dart';
-import '../home/TagManagementPage.dart';
-import '../search/search_page.dart';
-import '../home/trash_page.dart';
-import '../../../cubits/selection/selection_state.dart';
+import '../../pages/home/widgets/home_app_bar.dart';
+import '../../pages/home/widgets/home_body.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -28,18 +21,7 @@ class HomePage extends StatelessWidget {
     return BlocProvider(
       create: (_) => SelectionCubit(),
       child: Scaffold(
-        appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(kToolbarHeight),
-          child: BlocBuilder<SelectionCubit, SelectionState>(
-            builder: (context, selection) {
-              if (!selection.selecting) {
-                return _buildNormalAppBar(context);
-              } else {
-                return _buildSelectionAppBar(context, selection);
-              }
-            },
-          ),
-        ),
+        appBar: const HomeAppBar(),
 
         body: BlocBuilder<TagCubit, TagState>(
           buildWhen: (prev, curr) => curr is TagLoaded,
@@ -65,29 +47,21 @@ class HomePage extends StatelessWidget {
 
                 // ===== LOADED =====
                 if (tagState is TagLoaded && noteState is NoteLoaded) {
-                  return Column(
-                    children: [
-                      TagBar(
-                        tags: tagState.tags,
-                        selectedTagId: noteState.selectedTagId,
-                      ),
-                      const Divider(height: 1),
-                      Expanded(
-                        child: NoteGrid(
-                          notes: noteState.notes,
-                          onOpenNote: (noteVM) async {
-                            await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => NotePage(note: noteVM.note),
-                              ),
-                            );
-
-                            context.read<NoteCubit>().loadNotes();
-                          },
+                  return HomeBody(
+                    notes: noteState.notes,
+                    tags: tagState.tags,
+                    selectedTagId: noteState.selectedTagId,
+                    folderId: noteState.folderId,
+                    onOpenNote: (noteVM) async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => NotePage(note: noteVM.note),
                         ),
-                      ),
-                    ],
+                      );
+
+                      context.read<NoteCubit>().loadNotes();
+                    },
                   );
                 }
 
@@ -112,113 +86,4 @@ class HomePage extends StatelessWidget {
       ),
     );
   }
-
-  PreferredSizeWidget _buildNormalAppBar(BuildContext context) {
-    return AppBar(
-      title: const Text('Ghi chú'),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.search),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SearchPage()),
-            );
-          },
-        ),
-
-        PopupMenuButton<_HomeMenu>(
-          onSelected: (value) {
-            switch (value) {
-              case _HomeMenu.folder:
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const FolderListPage()),
-                );
-                break;
-
-              case _HomeMenu.tag:
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const TagManagementPage()),
-                );
-                break;
-
-              case _HomeMenu.trash:
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const TrashPage()),
-                );
-                break;
-            }
-          },
-          itemBuilder: (_) => const [
-            PopupMenuItem(
-              value: _HomeMenu.folder,
-              child: ListTile(
-                leading: Icon(Icons.folder),
-                title: Text('Thư mục'),
-              ),
-            ),
-            PopupMenuItem(
-              value: _HomeMenu.tag,
-              child: ListTile(leading: Icon(Icons.label), title: Text('Nhãn')),
-            ),
-            PopupMenuItem(
-              value: _HomeMenu.trash,
-              child: ListTile(leading: Icon(Icons.delete), title: Text('Thùng rác')),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  PreferredSizeWidget _buildSelectionAppBar(
-    BuildContext context,
-    SelectionState selection,
-  ) {
-    return AppBar(
-      leading: IconButton(
-        icon: const Icon(Icons.close),
-        onPressed: () {
-          context.read<SelectionCubit>().clear();
-        },
-      ),
-      title: Text('${selection.selectedIds.length} đã chọn'),
-      actions: [
-        // ☑️ CHỌN TẤT CẢ
-        IconButton(
-          icon: const Icon(Icons.select_all),
-          onPressed: () {
-            final state = context.read<NoteCubit>().state;
-            if (state is! NoteLoaded) return;
-
-            context.read<SelectionCubit>().selectAll(
-              state.notes.map((e) => e.note.id!).toList(),
-            );
-          },
-        ),
-
-        // 🏷️ GẮN NHÃN (CHỈ HIỆN KHI SELECTING)
-        IconButton(
-          icon: const Icon(Icons.label),
-          onPressed: selection.selectedIds.isEmpty
-              ? null
-              : () async {
-                  await showDialog(
-                    context: context,
-                    builder: (_) =>
-                        MultiNoteTagDialog(noteIds: selection.selectedIds),
-                  );
-
-                  context.read<NoteCubit>().loadNotes();
-                  context.read<SelectionCubit>().clear();
-                },
-        ),
-      ],
-    );
-  }
 }
-
-enum _HomeMenu { folder, tag, trash }

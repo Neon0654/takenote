@@ -26,8 +26,7 @@ class _TagSelectorDialogState extends State<TagSelectorDialog> {
   }
 
   Future<void> _loadNoteTags() async {
-    final repo = context.read<TagCubit>().repo;
-    final tags = await repo.getTagsOfNote(widget.noteId);
+    final tags = await context.read<TagCubit>().getTagsOfNote(widget.noteId);
 
     setState(() {
       _selectedTagIds.addAll(tags.map((e) => e.id!));

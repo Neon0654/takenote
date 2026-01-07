@@ -7,17 +7,14 @@ import '../../../../domain/repositories/tag_repository.dart';
 import '../../../../domain/repositories/note_repository.dart';
 
 import '../../../cubits/note/note_cubit.dart';
-import '../../../cubits/note/note_state.dart';
 import '../../../cubits/tag/tag_cubit.dart';
-import '../../../cubits/tag/tag_state.dart';
 
 import '../../../cubits/selection/selection_cubit.dart';
-import '../../../cubits/selection/selection_state.dart';
 
-import '../../../ui/widgets/note_grid.dart';
-import '../../../ui/widgets/tag_bar.dart';
+import 'widgets/folder_notes_app_bar.dart';
+import 'widgets/folder_notes_body.dart';
 
-import '../../../ui/pages/note/select_notes_page.dart';
+import '../selection/select_notes_page.dart';
 import '../../../ui/pages/note/note_page.dart';
 
 import '../../../../data/repositories_impl/attachment_repository_impl.dart';
@@ -54,63 +51,23 @@ class _FolderNotesPageState extends State<FolderNotesPage> {
           }
         },
         child: Scaffold(
-          appBar: _buildAppBar(),
+          appBar: FolderAppBar(
+            folderName: widget.folder.name,
+            folderId: widget.folder.id!,
+          ),
           floatingActionButton: FloatingActionButton(
             onPressed: () => _showAddNoteOptions(context),
             child: const Icon(Icons.add),
           ),
-          body: BlocBuilder<TagCubit, TagState>(
-            builder: (context, tagState) {
-              return BlocBuilder<NoteCubit, NoteState>(
-                builder: (context, noteState) {
-                  // ===== LOADING =====
-                  if (tagState is TagInitial ||
-                      tagState is TagLoading ||
-                      noteState is NoteInitial ||
-                      noteState is NoteLoading) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  // ===== ERROR =====
-                  if (tagState is TagError) {
-                    return Center(child: Text(tagState.message));
-                  }
-
-                  if (noteState is NoteError) {
-                    return Center(child: Text(noteState.message));
-                  }
-
-                  // ===== LOADED =====
-                  if (tagState is TagLoaded && noteState is NoteLoaded) {
-                    return Column(
-                      children: [
-                        TagBar(
-                          tags: tagState.tags, // ✅ lấy từ TagCubit
-                          selectedTagId: noteState.selectedTagId,
-                        ),
-                        const Divider(height: 1),
-                        Expanded(
-                          child: NoteGrid(
-                            notes: noteState.notes,
-                            onOpenNote: (noteVM) async {
-                              await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => NotePage(note: noteVM.note),
-                                ),
-                              );
-
-                              context.read<NoteCubit>().loadNotes();
-                            },
-                          ),
-                        ),
-                      ],
-                    );
-                  }
-
-                  return const SizedBox();
-                },
+          body: FolderBody(
+            folderId: widget.folder.id!,
+            onOpenNote: (noteVM) async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => NotePage(note: noteVM.note)),
               );
+
+              context.read<NoteCubit>().loadNotes();
             },
           ),
         ),
@@ -181,81 +138,4 @@ class _FolderNotesPageState extends State<FolderNotesPage> {
       MaterialPageRoute(builder: (_) => NotePage(folderId: widget.folder.id)),
     );
   }
-
-  PreferredSizeWidget _buildAppBar() {
-    return PreferredSize(
-      preferredSize: const Size.fromHeight(kToolbarHeight),
-      child: BlocBuilder<SelectionCubit, SelectionState>(
-        builder: (context, selection) {
-          if (!selection.selecting) {
-            return AppBar(title: Text(widget.folder.name));
-          }
-
-          final selectedCount = selection.selectedIds.length;
-
-          return AppBar(
-            leading: IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: () => context.read<SelectionCubit>().clear(),
-            ),
-            title: Text('$selectedCount đã chọn'),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.select_all),
-                onPressed: () {
-                  final state = context.read<NoteCubit>().state;
-                  if (state is! NoteLoaded) return;
-
-                  context.read<SelectionCubit>().selectAll(
-                    state.notes.map((e) => e.note.id!).toList(),
-                  );
-                },
-              ),
-              PopupMenuButton<_NoteAction>(
-                onSelected: (value) async {
-                  final ids = context.read<SelectionCubit>().state.selectedIds;
-                  final noteCubit = context.read<NoteCubit>();
-
-                  switch (value) {
-                    case _NoteAction.moveOut:
-                      await noteCubit.moveNotesToFolder(
-                        noteIds: ids,
-                        folderId: null,
-                      );
-                      noteCubit.showFolder(widget.folder.id);
-                      break;
-
-                    case _NoteAction.delete:
-                      await noteCubit.deleteNotes(ids);
-                      noteCubit.showFolder(widget.folder.id);
-                      break;
-                  }
-
-                  context.read<SelectionCubit>().clear();
-                },
-                itemBuilder: (_) => const [
-                  PopupMenuItem(
-                    value: _NoteAction.moveOut,
-                    child: ListTile(
-                      leading: Icon(Icons.drive_file_move),
-                      title: Text('Chuyển ra ngoài'),
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: _NoteAction.delete,
-                    child: ListTile(
-                      leading: Icon(Icons.delete, color: Colors.red),
-                      title: Text('Xóa'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
 }
-
-enum _NoteAction { moveOut, delete }
