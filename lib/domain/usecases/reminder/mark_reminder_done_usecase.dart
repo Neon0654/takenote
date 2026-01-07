@@ -1,6 +1,6 @@
 import '../../repositories/reminder_repository.dart';
 
-/// Marks a reminder as done.
+
 class MarkReminderDoneUseCase {
   final ReminderRepository repo;
 

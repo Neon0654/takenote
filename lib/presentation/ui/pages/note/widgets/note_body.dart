@@ -36,7 +36,7 @@ class NoteBody extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             children: [
-              // --- TITLE SECTION ---
+              
               TextField(
                 controller: titleController,
                 decoration: InputDecoration(
@@ -53,7 +53,7 @@ class NoteBody extends StatelessWidget {
               ),
               const SizedBox(height: 12),
 
-              // --- META SECTION (Grouped in a Card) ---
+              
               Container(
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
@@ -84,7 +84,7 @@ class NoteBody extends StatelessWidget {
               ),
               const SizedBox(height: 20),
 
-              // --- CONTENT EDITOR ---
+              
               TextField(
                 controller: contentController,
                 maxLines: null,

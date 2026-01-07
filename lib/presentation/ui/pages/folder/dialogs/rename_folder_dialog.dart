@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../cubits/folder/folder_cubit.dart';
 
-/// Dialog to rename a folder. UI-only: takes current name, lets user input new name.
+
 class RenameFolderDialog extends StatefulWidget {
   final int folderId;
   final String initialName;

@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../cubits/tag/tag_cubit.dart';
 import '../../../../cubits/note/note_cubit.dart';
 
-/// Dialog to rename a tag. UI-only: takes current name and submits new name.
+
 class RenameTagDialog extends StatefulWidget {
   final int tagId;
   final String initialName;
@@ -50,7 +50,7 @@ class _RenameTagDialogState extends State<RenameTagDialog> {
             if (newName.isEmpty) return;
 
             context.read<TagCubit>().renameTag(widget.tagId, newName);
-            // preserve behavior: reload notes after renaming
+            
             context.read<NoteCubit>().loadNotes();
             Navigator.pop(context);
           },

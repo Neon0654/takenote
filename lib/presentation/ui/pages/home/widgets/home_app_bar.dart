@@ -13,7 +13,7 @@ import '../../trash/trash_page.dart';
 import 'sort_menu.dart';
 import '../../../../../utils/share_utils.dart';
 
-/// App bar that switches between normal and selection mode.
+
 class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   const HomeAppBar({Key? key}) : super(key: key);
 

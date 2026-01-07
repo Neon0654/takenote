@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../domain/repositories/tag_repository.dart';
 import '../../../domain/entities/tag_entity.dart';
 
-// UseCases
+
 import '../../../domain/usecases/tag/get_tags_usecase.dart';
 import '../../../domain/usecases/tag/create_tag_usecase.dart';
 import '../../../domain/usecases/tag/rename_tag_usecase.dart';
@@ -16,7 +16,7 @@ import 'tag_state.dart';
 class TagCubit extends Cubit<TagState> {
   final TagRepository repo;
 
-  // Business logic moved to UseCases
+  
   final GetTagsUseCase getTagsUseCase;
   final CreateTagUseCase createTagUseCase;
   final RenameTagUseCase renameTagUseCase;
@@ -40,7 +40,7 @@ class TagCubit extends Cubit<TagState> {
         removeTagFromNoteUseCase = removeTagFromNoteUseCase ?? RemoveTagFromNoteUseCase(repo),
         super(TagInitial());
 
-  // ===== LOAD =====
+  
   Future<void> loadTags() async {
     try {
       emit(TagLoading());
@@ -51,9 +51,9 @@ class TagCubit extends Cubit<TagState> {
     }
   }
 
-  // ===== CRUD =====
+  
   Future<void> createTag(String name) async {
-    // UseCase validates empty names, but keep early return to avoid unnecessary work
+    
     if (name.trim().isEmpty) return;
 
     await createTagUseCase.call(name.trim());
@@ -73,7 +73,7 @@ class TagCubit extends Cubit<TagState> {
     await loadTags();
   }
 
-  // ===== NOTE ↔ TAG =====
+  
   Future<void> addTagToNote({required int noteId, required int tagId}) async {
     await addTagToNoteUseCase.call(noteId: noteId, tagId: tagId);
   }
@@ -85,7 +85,7 @@ class TagCubit extends Cubit<TagState> {
     await removeTagFromNoteUseCase.call(noteId: noteId, tagId: tagId);
   }
 
-  // Helper for UI to fetch tags of a given note (keeps UI thin)
+  
   Future<List<TagEntity>> getTagsOfNote(int noteId) async {
     return await repo.getTagsOfNote(noteId);
   }

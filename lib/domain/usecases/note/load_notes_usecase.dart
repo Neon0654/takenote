@@ -6,7 +6,7 @@ import '../../repositories/tag_repository.dart';
 import '../../repositories/attachment_repository.dart';
 import '../../repositories/reminder_repository.dart';
 
-/// Result returned by [LoadNotesUseCase]
+
 class LoadNotesResult {
   final List<NoteViewModel> notes;
   final List<TagEntity> tags;
@@ -17,9 +17,9 @@ class LoadNotesResult {
   });
 }
 
-/// Use case that encapsulates the logic of loading notes and building view models.
-/// Moved from NoteCubit to keep cubit thin.
-/// ❗ No UI / Flutter / Cubit concepts here.
+
+
+
 class LoadNotesUseCase {
   final NoteRepository noteRepo;
   final TagRepository tagRepo;
@@ -39,7 +39,7 @@ class LoadNotesUseCase {
     bool isTrash = false,
     bool isUnassigned = false,
   }) async {
-    // Load all tags once (same behavior as old cubit)
+    
     final tags = await tagRepo.getAllTags();
 
     List<NoteEntity> notes;

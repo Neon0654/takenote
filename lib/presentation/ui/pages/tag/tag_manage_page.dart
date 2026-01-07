@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'widgets/tag_manage_app_bar.dart';
 import 'widgets/tag_manage_body.dart';
 
-// Dialogs
+
 import 'dialogs/create_tag_dialog.dart';
 
 class TagManagementPage extends StatelessWidget {

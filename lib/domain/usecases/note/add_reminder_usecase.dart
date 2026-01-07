@@ -2,7 +2,7 @@ import '../../entities/reminder_entity.dart';
 import '../../repositories/reminder_repository.dart';
 import '../../../../services/notification_service.dart';
 
-/// Adds a reminder and schedules a notification. Moved from cubit.
+
 class AddReminderUseCase {
   final ReminderRepository reminderRepo;
 
@@ -17,10 +17,10 @@ class AddReminderUseCase {
       notificationId: notificationId,
     );
 
-    // Persist reminder first (same ordering as before)
+    
     await reminderRepo.add(reminder);
 
-    // schedule, but swallow errors as before
+    
     try {
       await NotificationService.schedule(
         id: notificationId,
@@ -29,7 +29,7 @@ class AddReminderUseCase {
         time: remindAt,
       );
     } catch (e) {
-      // keep warning consistent
+      
     }
   }
 }

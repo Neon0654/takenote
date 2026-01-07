@@ -1,6 +1,6 @@
 import '../../repositories/reminder_repository.dart';
 
-/// Deletes a reminder and returns the associated notification id (if any).
+
 class DeleteReminderUseCase {
   final ReminderRepository repo;
 

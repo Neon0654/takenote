@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../cubits/folder/folder_cubit.dart';
 import '../../../../cubits/note/note_cubit.dart';
 
-/// Dialog to create a folder. UI-only: reads user input and calls cubit methods.
+
 class CreateFolderDialog extends StatefulWidget {
   const CreateFolderDialog({Key? key}) : super(key: key);
 

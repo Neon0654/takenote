@@ -9,7 +9,7 @@ class TrashCubit extends Cubit<TrashState> {
   TrashCubit(this.repo) : super(TrashLoading());
 
   Future<void> loadTrash() async {
-    final notes = await repo.getNotes(); // sau này tách trash riêng
+    final notes = await repo.getNotes(); 
     emit(TrashLoaded(notes.where((n) => n.isDeleted).toList()));
   }
 

@@ -36,7 +36,7 @@ class NoteItem extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ===== TITLE + PIN =====
+          
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -52,7 +52,7 @@ class NoteItem extends StatelessWidget {
                 ),
               ),
 
-              // PIN
+              
               GestureDetector(
                 onTap: () {
                   context.read<NoteCubit>().togglePin(note);
@@ -68,7 +68,7 @@ class NoteItem extends StatelessWidget {
 
           const SizedBox(height: 6),
 
-          // ===== CONTENT =====
+          
           Expanded(
             child: Text(
               note.content,

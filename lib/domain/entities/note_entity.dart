@@ -5,7 +5,7 @@ class NoteEntity {
   final String title;
   final String content;
   final DateTime createdAt;
-  final DateTime updatedAt; // 🔧 new field: last updated timestamp
+  final DateTime updatedAt; 
   final bool isPinned;
   final bool isDeleted;
   final List<TagEntity> tags;
@@ -19,7 +19,7 @@ class NoteEntity {
     this.isPinned = false,
     this.isDeleted = false,
     this.tags = const [],
-  }) : updatedAt = updatedAt ?? createdAt; // default updatedAt = createdAt
+  }) : updatedAt = updatedAt ?? createdAt; 
 
   NoteEntity copyWith({
     int? id,

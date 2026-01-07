@@ -34,8 +34,8 @@ class NoteGrid extends StatelessWidget {
       ),
       itemCount: notes.length,
       itemBuilder: (context, index) {
-        final noteVM = notes[index]; // ✅ NoteViewModel
-        final note = noteVM.note;    // ✅ NoteEntity
+        final noteVM = notes[index]; 
+        final note = noteVM.note;    
 
         return GestureDetector(
           onLongPress: () {
@@ -51,14 +51,14 @@ class NoteGrid extends StatelessWidget {
             }
           },
           child: NoteItem(
-            note: note, // ✅ truyền NoteEntity
+            note: note, 
             selected: context
                 .watch<SelectionCubit>()
                 .state
                 .selectedIds
                 .contains(note.id),
-            attachmentCount: noteVM.attachmentCount, // ✅ lấy từ VM
-            hasReminder: noteVM.hasReminder,         // ✅ lấy từ VM
+            attachmentCount: noteVM.attachmentCount, 
+            hasReminder: noteVM.hasReminder,         
           ),
         );
       },

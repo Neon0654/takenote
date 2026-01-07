@@ -12,14 +12,14 @@ class SearchCubit extends Cubit<SearchState> {
   SearchCubit(this.repo) : super(SearchIdle(SearchTimeFilter.all));
 
   void setFilter(SearchTimeFilter filter) {
-    // 🔁 Toggle: bấm lại chip đang chọn → về ALL
+    
     if (_filter == filter) {
       _filter = SearchTimeFilter.all;
     } else {
       _filter = filter;
     }
 
-    // 🔍 Luôn search lại (kể cả keyword rỗng)
+    
     search(_lastKeyword);
   }
 

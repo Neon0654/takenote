@@ -1,7 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../domain/repositories/folder_repository.dart';
 
-// UseCases
 import '../../../domain/usecases/folder/get_folders_usecase.dart';
 import '../../../domain/usecases/folder/create_folder_usecase.dart';
 import '../../../domain/usecases/folder/rename_folder_usecase.dart';
@@ -12,7 +11,6 @@ import 'folder_state.dart';
 class FolderCubit extends Cubit<FolderState> {
   final FolderRepository repo;
 
-  // Business logic moved to UseCases
   final GetFoldersUseCase getFoldersUseCase;
   final CreateFolderUseCase createFolderUseCase;
   final RenameFolderUseCase renameFolderUseCase;

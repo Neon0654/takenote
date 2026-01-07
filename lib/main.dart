@@ -3,31 +3,26 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'services/notification_service.dart';
 
-// DATA
 import 'data/database/notes_database.dart';
 
-// DATASOURCES
 import 'data/datasources/local/note/note_local_datasource_impl.dart';
 import 'data/datasources/local/folder/folder_local_datasource_impl.dart';
 import 'data/datasources/local/tag/tag_local_datasource_impl.dart';
 import 'data/datasources/local/attachment/attachment_local_datasource_impl.dart';
 import 'data/datasources/local/reminder/reminder_local_datasource_impl.dart';
 
-// REPOSITORIES IMPL
 import 'data/repositories_impl/note_repository_impl.dart';
 import 'data/repositories_impl/folder_repository_impl.dart';
 import 'data/repositories_impl/tag_repository_impl.dart';
 import 'data/repositories_impl/attachment_repository_impl.dart';
 import 'data/repositories_impl/reminder_repository_impl.dart';
 
-// DOMAIN
 import 'domain/repositories/note_repository.dart';
 import 'domain/repositories/folder_repository.dart';
 import 'domain/repositories/tag_repository.dart';
 import 'domain/repositories/attachment_repository.dart';
 import 'domain/repositories/reminder_repository.dart';
 
-// PRESENTATION
 import 'presentation/cubits/note/note_cubit.dart';
 import 'presentation/cubits/folder/folder_cubit.dart';
 import 'presentation/cubits/search/search_cubit.dart';
@@ -48,10 +43,8 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ===== DATABASE =====
     final database = NotesDatabase.instance;
 
-    // ===== DATASOURCES =====
     final noteLocalDataSource = NoteLocalDataSourceImpl(database);
     final folderLocalDataSource = FolderLocalDataSourceImpl(database);
     final tagLocalDataSource = TagLocalDataSourceImpl(database);
@@ -60,7 +53,6 @@ class MyApp extends StatelessWidget {
     final reminderLocalDataSource =
         ReminderLocalDataSourceImpl(database);
 
-    // ===== REPOSITORIES =====
     final NoteRepository noteRepository = NoteRepositoryImpl(
       noteLocal: noteLocalDataSource,
       tagLocal: tagLocalDataSource,

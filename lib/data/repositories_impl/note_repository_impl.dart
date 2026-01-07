@@ -18,7 +18,7 @@ class NoteRepositoryImpl implements NoteRepository {
     required this.folderLocal,
   });
 
-  // ================= NOTE =================
+  
 
   @override
   Future<List<NoteEntity>> getNotes({int? folderId, int? tagId}) async {
@@ -78,7 +78,7 @@ class NoteRepositoryImpl implements NoteRepository {
         title: note.title,
         content: note.content,
         createdAt: note.createdAt,
-        updatedAt: DateTime.now(), // update timestamp when toggling pin
+        updatedAt: DateTime.now(), 
         isPinned: !note.isPinned,
         isDeleted: note.isDeleted,
       ),

@@ -1,6 +1,6 @@
 import '../../repositories/note_repository.dart';
 
-/// Moves notes to trash (soft delete) for given ids. Moved from cubit.
+
 class DeleteNotesUseCase {
   final NoteRepository noteRepo;
 

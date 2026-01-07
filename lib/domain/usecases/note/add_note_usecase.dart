@@ -1,7 +1,7 @@
 import '../../entities/note_entity.dart';
 import '../../repositories/note_repository.dart';
 
-/// Creates a note entity and delegates to repository. Moved from cubit.
+
 class AddNoteUseCase {
   final NoteRepository noteRepo;
 
