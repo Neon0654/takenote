@@ -5,6 +5,8 @@ import '../../../../domain/entities/folder_entity.dart';
 
 import '../../../../domain/repositories/tag_repository.dart';
 import '../../../../domain/repositories/note_repository.dart';
+import '../../../../domain/repositories/attachment_repository.dart';
+import '../../../../domain/repositories/reminder_repository.dart';
 
 import '../../../cubits/note/note_cubit.dart';
 import '../../../cubits/tag/tag_cubit.dart';
@@ -16,9 +18,6 @@ import 'widgets/folder_notes_body.dart';
 
 import '../selection/select_notes_page.dart';
 import '../../../ui/pages/note/note_page.dart';
-
-import '../../../../data/repositories_impl/attachment_repository_impl.dart';
-import '../../../../data/repositories_impl/reminder_repository_impl.dart';
 
 class FolderNotesPage extends StatefulWidget {
   final FolderEntity folder;
@@ -132,8 +131,8 @@ class _FolderNotesPageState extends State<FolderNotesPage> {
               create: (_) => NoteCubit(
                 context.read<NoteRepository>(),
                 context.read<TagRepository>(),
-                context.read<AttachmentRepositoryImpl>(),
-                context.read<ReminderRepositoryImpl>(),
+                context.read<AttachmentRepository>(),
+                context.read<ReminderRepository>(),
               )..showUnassigned(),
             ),
             BlocProvider(create: (_) => SelectionCubit()),
