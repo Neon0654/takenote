@@ -22,6 +22,6 @@ abstract class NoteRepository {
   // ===== SEARCH =====
   Future<List<NoteEntity>> searchNotes({
     required String keyword,
-    required DateTime fromDate,
+    DateTime? fromDate,
   });
 }

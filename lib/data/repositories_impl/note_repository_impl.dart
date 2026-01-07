@@ -120,7 +120,7 @@ class NoteRepositoryImpl implements NoteRepository {
   @override
   Future<List<NoteEntity>> searchNotes({
     required String keyword,
-    required DateTime fromDate,
+    DateTime? fromDate,
   }) async {
     final models = await noteLocal.searchNotesWithRange(keyword, fromDate);
 
