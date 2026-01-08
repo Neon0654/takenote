@@ -36,7 +36,6 @@ class NoteBody extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             children: [
-              
               TextField(
                 controller: titleController,
                 decoration: InputDecoration(
@@ -53,7 +52,6 @@ class NoteBody extends StatelessWidget {
               ),
               const SizedBox(height: 12),
 
-              
               Container(
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
@@ -84,7 +82,6 @@ class NoteBody extends StatelessWidget {
               ),
               const SizedBox(height: 20),
 
-              
               TextField(
                 controller: contentController,
                 maxLines: null,
@@ -156,7 +153,9 @@ class _MetaActions extends StatelessWidget {
           IconButton.filledTonal(
             onPressed: toggleMetaDetail,
             icon: Icon(
-              showMetaDetail ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+              showMetaDetail
+                  ? Icons.keyboard_arrow_up
+                  : Icons.keyboard_arrow_down,
             ),
           ),
         ],
@@ -178,9 +177,7 @@ class _MetaActions extends StatelessWidget {
         label: Text(label),
         style: FilledButton.styleFrom(
           visualDensity: VisualDensity.compact,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),
     );
@@ -212,18 +209,59 @@ class _MetaDetail extends StatelessWidget {
             spacing: 6,
             runSpacing: 0,
             children: note.tags
-                .map((t) => Chip(
-                      label: Text('#${t.name}'),
-                      visualDensity: VisualDensity.compact,
-                      backgroundColor: theme.colorScheme.surface,
-                      side: BorderSide.none,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ))
+                .map(
+                  (t) => Chip(
+                    label: Text('#${t.name}'),
+                    visualDensity: VisualDensity.compact,
+                    backgroundColor: theme.colorScheme.surface,
+                    side: BorderSide.none,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                )
                 .toList(),
           ),
           const SizedBox(height: 12),
+        ],
+        if (vm.attachments.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Text(
+            'Tệp đính kèm',
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Column(
+            children: vm.attachments.map((a) {
+              return Container(
+                margin: const EdgeInsets.only(bottom: 6),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ListTile(
+                  dense: true,
+                  visualDensity: VisualDensity.compact,
+                  leading: const Icon(Icons.attach_file, size: 18),
+                  title: Text(
+                    a.fileName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.remove_circle_outline, size: 18),
+                    color: theme.colorScheme.error,
+                    onPressed: () {
+                      context.read<NoteCubit>().deleteAttachment(a.id!);
+                    },
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
         ],
         if (vm.reminders.isNotEmpty) ...[
           Text(
@@ -243,8 +281,11 @@ class _MetaDetail extends StatelessWidget {
               child: ListTile(
                 dense: true,
                 visualDensity: VisualDensity.compact,
-                leading: Icon(Icons.alarm,
-                    size: 18, color: theme.colorScheme.secondary),
+                leading: Icon(
+                  Icons.alarm,
+                  size: 18,
+                  color: theme.colorScheme.secondary,
+                ),
                 title: Text(
                   '${r.remindAt.day}/${r.remindAt.month}/${r.remindAt.year} '
                   '${r.remindAt.hour}:${r.remindAt.minute.toString().padLeft(2, '0')}',
